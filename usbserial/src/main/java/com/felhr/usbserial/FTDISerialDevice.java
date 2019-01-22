@@ -10,6 +10,8 @@ import android.hardware.usb.UsbInterface;
 import android.hardware.usb.UsbRequest;
 import android.util.Log;
 
+import com.felhr.utils.SafeUsbRequest;
+
 public class FTDISerialDevice extends UsbSerialDevice
 {
     private static final String CLASS_ID = FTDISerialDevice.class.getSimpleName();
@@ -77,10 +79,9 @@ public class FTDISerialDevice extends UsbSerialDevice
     private UsbCTSCallback ctsCallback;
     private UsbDSRCallback dsrCallback;
 
-    private UsbInterface mInterface;
+    private final UsbInterface mInterface;
     private UsbEndpoint inEndpoint;
     private UsbEndpoint outEndpoint;
-    private UsbRequest requestIN;
 
     public FTDIUtilities ftdiUtilities;
 
@@ -115,7 +116,7 @@ public class FTDISerialDevice extends UsbSerialDevice
         if(ret)
         {
             // Initialize UsbRequest
-            requestIN = new UsbRequest();
+            UsbRequest requestIN = new SafeUsbRequest();
             requestIN.initialize(connection, inEndpoint);
 
             // Restart the working thread if it has been killed before and  get and claim interface

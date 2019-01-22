@@ -8,6 +8,8 @@ import android.hardware.usb.UsbInterface;
 import android.hardware.usb.UsbRequest;
 import android.util.Log;
 
+import com.felhr.utils.SafeUsbRequest;
+
 public class CDCSerialDevice extends UsbSerialDevice
 {
     private static final String CLASS_ID = CDCSerialDevice.class.getSimpleName();
@@ -44,10 +46,9 @@ public class CDCSerialDevice extends UsbSerialDevice
     private static final int CDC_CONTROL_LINE_ON = 0x0003;
     private static final int CDC_CONTROL_LINE_OFF = 0x0000;
 
-    private UsbInterface mInterface;
+    private final UsbInterface mInterface;
     private UsbEndpoint inEndpoint;
     private UsbEndpoint outEndpoint;
-    private UsbRequest requestIN;
 
     private int initialBaudRate = 0;
 
@@ -82,7 +83,7 @@ public class CDCSerialDevice extends UsbSerialDevice
         if(ret)
         {
             // Initialize UsbRequest
-            requestIN = new UsbRequest();
+            UsbRequest requestIN = new SafeUsbRequest();
             requestIN.initialize(connection, inEndpoint);
 
             // Restart the working thread if it has been killed before and  get and claim interface
@@ -336,7 +337,7 @@ public class CDCSerialDevice extends UsbSerialDevice
 
         // Default Setup
         setControlCommand(CDC_SET_LINE_CODING, 0, getInitialLineCoding());
-        setControlCommand(CDC_SET_CONTROL_LINE_STATE, CDC_CONTROL_LINE_ON, null);
+        setControlCommand(CDC_SET_CONTROL_LINE_STATE, CDC_CONTROL_LINE_OFF, null);
 
         return true;
     }

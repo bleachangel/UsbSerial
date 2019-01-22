@@ -14,7 +14,7 @@ import android.hardware.usb.UsbInterface;
 import android.hardware.usb.UsbRequest;
 import android.util.Log;
 
-import java.util.concurrent.atomic.AtomicBoolean;
+import com.felhr.utils.SafeUsbRequest;
 
 public class CH34xSerialDevice extends UsbSerialDevice
 {
@@ -83,7 +83,6 @@ public class CH34xSerialDevice extends UsbSerialDevice
     private UsbInterface mInterface;
     private UsbEndpoint inEndpoint;
     private UsbEndpoint outEndpoint;
-    private UsbRequest requestIN;
 
     private FlowControlThread flowControlThread;
     private UsbCTSCallback ctsCallback;
@@ -116,7 +115,7 @@ public class CH34xSerialDevice extends UsbSerialDevice
         if(ret)
         {
             // Initialize UsbRequest
-            requestIN = new UsbRequest();
+            UsbRequest requestIN = new SafeUsbRequest();
             requestIN.initialize(connection, inEndpoint);
 
             // Restart the working thread if it has been killed before and  get and claim interface
@@ -607,66 +606,48 @@ public class CH34xSerialDevice extends UsbSerialDevice
         }
     }
 
-    private class FlowControlThread extends Thread
+    private class FlowControlThread extends AbstractWorkerThread
     {
-        private long time = 100; // 100ms
-
-        private boolean firstTime;
-
-        private AtomicBoolean keep;
-
-        public FlowControlThread()
-        {
-            keep = new AtomicBoolean(true);
-            firstTime = true;
-        }
+        private final long time = 100; // 100ms
 
         @Override
-        public void run()
+        public void doRun()
         {
-            while(keep.get())
+            if(!firstTime)
             {
-                if(!firstTime)
+                // Check CTS status
+                if(rtsCtsEnabled)
                 {
-                    // Check CTS status
-                    if(rtsCtsEnabled)
+                    boolean cts = pollForCTS();
+                    if(ctsState != cts)
                     {
-                        boolean cts = pollForCTS();
-                        if(ctsState != cts)
-                        {
-                            ctsState = !ctsState;
-                            if (ctsCallback != null)
-                                ctsCallback.onCTSChanged(ctsState);
-                        }
+                        ctsState = !ctsState;
+                        if (ctsCallback != null)
+                            ctsCallback.onCTSChanged(ctsState);
                     }
-
-                    // Check DSR status
-                    if(dtrDsrEnabled)
-                    {
-                        boolean dsr = pollForDSR();
-                        if(dsrState != dsr)
-                        {
-                            dsrState = !dsrState;
-                            if (dsrCallback != null)
-                                dsrCallback.onDSRChanged(dsrState);
-                        }
-                    }
-                }else
-                {
-                    if(rtsCtsEnabled && ctsCallback != null)
-                        ctsCallback.onCTSChanged(ctsState);
-
-                    if(dtrDsrEnabled && dsrCallback != null)
-                        dsrCallback.onDSRChanged(dsrState);
-
-                    firstTime = false;
                 }
-            }
-        }
 
-        public void stopThread()
-        {
-            keep.set(false);
+                // Check DSR status
+                if(dtrDsrEnabled)
+                {
+                    boolean dsr = pollForDSR();
+                    if(dsrState != dsr)
+                    {
+                        dsrState = !dsrState;
+                        if (dsrCallback != null)
+                            dsrCallback.onDSRChanged(dsrState);
+                    }
+                }
+            }else
+            {
+                if(rtsCtsEnabled && ctsCallback != null)
+                    ctsCallback.onCTSChanged(ctsState);
+
+                if(dtrDsrEnabled && dsrCallback != null)
+                    dsrCallback.onDSRChanged(dsrState);
+
+                firstTime = false;
+            }
         }
 
         public boolean pollForCTS()

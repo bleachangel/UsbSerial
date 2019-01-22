@@ -9,7 +9,7 @@ public class SerialInputStream extends InputStream
 
     private int maxBufferSize =  16 * 1024;
 
-    private byte[] buffer;
+    private final byte[] buffer;
     private int pointer;
     private int bufferSize;
 
@@ -42,7 +42,7 @@ public class SerialInputStream extends InputStream
         int ret = device.syncRead(buffer, timeout);
         if(ret >= 0) {
             bufferSize = ret;
-            return buffer[pointer++];
+            return buffer[pointer++] & 0xff;
         }else {
             return -1;
         }
@@ -68,7 +68,7 @@ public class SerialInputStream extends InputStream
 
     private int checkFromBuffer(){
         if(bufferSize > 0 && pointer < bufferSize){
-            return buffer[pointer++];
+            return buffer[pointer++] & 0xff;
         }else{
             pointer = 0;
             bufferSize = -1;
