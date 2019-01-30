@@ -19,6 +19,7 @@ import com.felhr.usbserial.UsbSerialDevice;
 import com.felhr.usbserial.UsbSerialInterface;
 
 import java.io.UnsupportedEncodingException;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -40,8 +41,14 @@ public class UsbService extends Service {
     public static final int CTS_CHANGE = 1;
     public static final int DSR_CHANGE = 2;
     public static final int SYNC_READ = 3;
+    public static final int MESSAGE_GYROSCOPE = 4;
+    public static final int MESSAGE_ACCELERATOR = 5;
+    public static final int MESSAGE_MAGNETIC = 6;
+    public static final int MESSAGE_ALS = 7;
+    public static final int MESSAGE_PS = 8;
+    public static final int MESSAGE_ERR_RATE = 9;
     private static final String ACTION_USB_PERMISSION = "com.android.example.USB_PERMISSION";
-    private static final int BAUD_RATE = 9600; // BaudRate. Change this value if you need
+    private static final int BAUD_RATE = 921600; // BaudRate. Change this value if you need
     public static boolean SERVICE_CONNECTED = false;
 
     private IBinder binder = new UsbBinder();
@@ -54,6 +61,37 @@ public class UsbService extends Service {
     private UsbSerialDevice serialPort;
 
     private boolean serialPortConnected;
+
+    public class AcceleratorData extends AbstractSensorData {
+        AcceleratorData(int x, int y, int z){
+            super(x, y, z);
+        }
+    }
+
+    public class GyroscopeData extends AbstractSensorData {
+        GyroscopeData(int x, int y, int z){
+            super(x, y, z);
+        }
+    }
+
+    public class MagneticData extends AbstractSensorData {
+        MagneticData(int x, int y, int z){
+            super(x, y, z);
+        }
+    }
+
+    public class AlsData extends AbstractSensorData {
+        AlsData(int x, int y, int z){
+            super(x, y, z);
+        }
+    }
+
+    public class PsData extends AbstractSensorData {
+        PsData(int x, int y, int z){
+            super(x, y, z);
+        }
+    }
+
     /*
      *  Data received from serial port will be received here. Just populate onReceivedData with your code
      *  In this particular example. byte stream is converted to String and send to UI thread to
@@ -64,10 +102,69 @@ public class UsbService extends Service {
         public void onReceivedData(byte[] arg0) {
             try {
                 String data = new String(arg0, "UTF-8");
-                if (mHandler != null)
-                    mHandler.obtainMessage(MESSAGE_FROM_SERIAL_PORT, data).sendToTarget();
+                if (mHandler != null) {
+                    switch (arg0[0]){
+                        case UsbSerialDevice.MESSAGE_TAG_ACELERATOR:
+                            if(arg0.length >= 13) {
+                                int x = Integer.parseInt(String.valueOf((char) arg0[4]), 16) << 12
+                                        | Integer.parseInt(String.valueOf((char) arg0[3]), 16) << 8
+                                        | Integer.parseInt(String.valueOf((char) arg0[2]), 16) << 4
+                                        | Integer.parseInt(String.valueOf((char) arg0[1]), 16);
+
+                                int y = Integer.parseInt(String.valueOf((char) arg0[8]), 16) << 12
+                                        | Integer.parseInt(String.valueOf((char) arg0[7]), 16) << 8
+                                        | Integer.parseInt(String.valueOf((char) arg0[6]), 16) << 4
+                                        | Integer.parseInt(String.valueOf((char) arg0[5]), 16);
+
+                                int z = Integer.parseInt(String.valueOf((char) arg0[12]), 16) << 12
+                                        | Integer.parseInt(String.valueOf((char) arg0[11]), 16) << 8
+                                        | Integer.parseInt(String.valueOf((char) arg0[10]), 16) << 4
+                                        | Integer.parseInt(String.valueOf((char) arg0[9]), 16);
+                                AcceleratorData acc = new AcceleratorData(x, y, z);
+
+                                mHandler.obtainMessage(MESSAGE_ACCELERATOR, acc).sendToTarget();
+                            }
+                            break;
+                        case UsbSerialDevice.MESSAGE_TAG_GYROSCOPE:
+                            if(arg0.length >= 13) {
+                                int x = Integer.parseInt(String.valueOf((char) arg0[4]), 16) << 12
+                                        | Integer.parseInt(String.valueOf((char) arg0[3]), 16) << 8
+                                        | Integer.parseInt(String.valueOf((char) arg0[2]), 16) << 4
+                                        | Integer.parseInt(String.valueOf((char) arg0[1]), 16);
+
+                                int y = Integer.parseInt(String.valueOf((char) arg0[8]), 16) << 12
+                                        | Integer.parseInt(String.valueOf((char) arg0[7]), 16) << 8
+                                        | Integer.parseInt(String.valueOf((char) arg0[6]), 16) << 4
+                                        | Integer.parseInt(String.valueOf((char) arg0[5]), 16);
+
+                                int z = Integer.parseInt(String.valueOf((char) arg0[12]), 16) << 12
+                                        | Integer.parseInt(String.valueOf((char) arg0[11]), 16) << 8
+                                        | Integer.parseInt(String.valueOf((char) arg0[10]), 16) << 4
+                                        | Integer.parseInt(String.valueOf((char) arg0[9]), 16);
+                                GyroscopeData gyro = new GyroscopeData(x, y, z);
+
+                                mHandler.obtainMessage(MESSAGE_GYROSCOPE, gyro).sendToTarget();
+                            }
+                            break;
+                        case UsbSerialDevice.MESSAGE_TAG_MAGNETIC:
+                            mHandler.obtainMessage(MESSAGE_MAGNETIC, data).sendToTarget();
+                            break;
+                        case UsbSerialDevice.MESSAGE_TAG_ALS:
+                            mHandler.obtainMessage(MESSAGE_ALS, data).sendToTarget();
+                            break;
+                        case UsbSerialDevice.MESSAGE_TAG_PS:
+                            mHandler.obtainMessage(MESSAGE_PS, data).sendToTarget();
+                            break;
+                    }
+                    //mHandler.obtainMessage(MESSAGE_FROM_SERIAL_PORT, data).sendToTarget();
+                }
+
+                String errRate = "( err: " + serialPort.getErrCount() + ", analyzed: " + serialPort.getAnalyzedCount() + ", received: " + serialPort.getRecvCount() + " )";
+                mHandler.obtainMessage(MESSAGE_ERR_RATE, errRate).sendToTarget();
             } catch (UnsupportedEncodingException e) {
                 e.printStackTrace();
+            } catch (RuntimeException e1){
+                e1.printStackTrace();
             }
         }
     };
@@ -121,7 +218,8 @@ public class UsbService extends Service {
                 Intent intent = new Intent(ACTION_USB_DISCONNECTED);
                 arg0.sendBroadcast(intent);
                 if (serialPortConnected) {
-                    serialPort.syncClose();
+                    //serialPort.syncClose();
+                    serialPort.close();
                 }
                 serialPortConnected = false;
             }
@@ -168,8 +266,10 @@ public class UsbService extends Service {
      * This function will be called from MainActivity to write data through Serial Port
      */
     public void write(byte[] data) {
-        if (serialPort != null)
-            serialPort.syncWrite(data, 0);
+        if (serialPort != null) {
+            //serialPort.syncWrite(data, 0);
+            serialPort.write(data);
+        }
     }
 
     /*
@@ -260,7 +360,8 @@ public class UsbService extends Service {
         public void run() {
             serialPort = UsbSerialDevice.createUsbSerialDevice(device, connection);
             if (serialPort != null) {
-                if (serialPort.syncOpen()) {
+                //if (serialPort.syncOpen()) {
+                if (serialPort.open()) {
                     serialPortConnected = true;
                     serialPort.setBaudRate(BAUD_RATE);
                     serialPort.setDataBits(UsbSerialInterface.DATA_BITS_8);
@@ -273,11 +374,11 @@ public class UsbService extends Service {
                      * UsbSerialInterface.FLOW_CONTROL_DSR_DTR only for CP2102 and FT232
                      */
                     serialPort.setFlowControl(UsbSerialInterface.FLOW_CONTROL_OFF);
-                    serialPort.read(mCallback);
+                    serialPort.setReadCallback(mCallback);
                     serialPort.getCTS(ctsCallback);
                     serialPort.getDSR(dsrCallback);
 
-                    new ReadThread().start();
+                    //new ReadThread().start();
 
                     //
                     // Some Arduinos would need some sleep because firmware wait some time to know whether a new sketch is going
@@ -305,21 +406,22 @@ public class UsbService extends Service {
             }
         }
     }
-
+/*
     private class ReadThread extends Thread {
         @Override
         public void run() {
+            byte[] buffer = new byte[100];
             while(true){
-                byte[] buffer = new byte[100];
+                Arrays.fill(buffer, (byte)0);
                 int n = serialPort.syncRead(buffer, 0);
                 if(n > 0) {
-                    byte[] received = new byte[n];
-                    System.arraycopy(buffer, 0, received, 0, n);
-                    String receivedStr = new String(received);
+                    //byte[] received = new byte[n];
+                    //System.arraycopy(buffer, 0, received, 0, n);
+                    String receivedStr = new String(buffer);
                     mHandler.obtainMessage(SYNC_READ, receivedStr).sendToTarget();
                 }
             }
         }
-    }
+    }*/
 }
 

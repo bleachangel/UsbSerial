@@ -6,11 +6,16 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
 import android.support.v7.app.AppCompatActivity;
+import android.text.Spannable;
+import android.text.SpannableString;
+import android.text.method.ScrollingMovementMethod;
+import android.text.style.ForegroundColorSpan;
 import android.view.View;
 import android.widget.Button;
 import android.widget.CheckBox;
@@ -20,6 +25,8 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import java.lang.ref.WeakReference;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.Set;
 
 public class MainActivity extends AppCompatActivity {
@@ -51,8 +58,11 @@ public class MainActivity extends AppCompatActivity {
     };
     private UsbService usbService;
     private TextView display;
+    private TextView txtview_acc_value;
+    private TextView txtview_gyro_value;
+    private TextView txtview_err_rate;
     private EditText editText;
-    private CheckBox box9600, box38400;
+    private CheckBox box115200, box921600;
     private MyHandler mHandler;
     private final ServiceConnection usbConnection = new ServiceConnection() {
         @Override
@@ -67,6 +77,16 @@ public class MainActivity extends AppCompatActivity {
         }
     };
 
+    /*
+            * ��ʱ���ת��Ϊʱ��
+    */
+    public String stampToDate(long timeMillis){
+        SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        Date date = new Date(timeMillis);
+        return simpleDateFormat.format(date);
+    }
+
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -74,7 +94,12 @@ public class MainActivity extends AppCompatActivity {
 
         mHandler = new MyHandler(this);
 
-        display = (TextView) findViewById(R.id.textView1);
+        txtview_acc_value = (TextView) findViewById(R.id.txtview_acc_value);
+        txtview_gyro_value = (TextView) findViewById(R.id.txtview_gyro_value);
+        txtview_err_rate = (TextView) findViewById(R.id.txtview_err_rate);
+        /*
+        display.setMovementMethod(new ScrollingMovementMethod());
+
         editText = (EditText) findViewById(R.id.editText1);
         Button sendButton = (Button) findViewById(R.id.buttonSend);
         sendButton.setOnClickListener(new View.OnClickListener() {
@@ -84,30 +109,37 @@ public class MainActivity extends AppCompatActivity {
                     String data = editText.getText().toString();
                     if (usbService != null) { // if UsbService was correctly binded, Send data
                         usbService.write(data.getBytes());
+                        synchronized (display){
+                            long timeStamp = System.currentTimeMillis();
+                            String time = stampToDate(timeStamp);
+                            //display.setTextColor(Color.BLUE);
+                            display.append("("+time+"):"+data+"\n");
+
+                        }
                     }
                 }
             }
         });
 
-        box9600 = (CheckBox) findViewById(R.id.checkBox);
-        box9600.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+        box115200 = (CheckBox) findViewById(R.id.checkBox);
+        box115200.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                if(box9600.isChecked())
-                    box38400.setChecked(false);
+                if(box115200.isChecked())
+                    box921600.setChecked(false);
                 else
-                    box38400.setChecked(true);
+                    box921600.setChecked(true);
             }
         });
 
-        box38400 = (CheckBox) findViewById(R.id.checkBox2);
-        box38400.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+        box921600 = (CheckBox) findViewById(R.id.checkBox2);
+        box921600.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                if(box38400.isChecked())
-                    box9600.setChecked(false);
+                if(box921600.isChecked())
+                    box115200.setChecked(false);
                 else
-                    box9600.setChecked(true);
+                    box115200.setChecked(true);
             }
         });
 
@@ -115,12 +147,12 @@ public class MainActivity extends AppCompatActivity {
         baudrateButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if(box9600.isChecked())
-                    usbService.changeBaudRate(9600);
+                if(box115200.isChecked())
+                    usbService.changeBaudRate(115200);
                 else
-                    usbService.changeBaudRate(38400);
+                    usbService.changeBaudRate(921600);
             }
-        });
+        });*/
     }
 
     @Override
@@ -175,10 +207,18 @@ public class MainActivity extends AppCompatActivity {
 
         @Override
         public void handleMessage(Message msg) {
+            long timeStamp = System.currentTimeMillis();
+            String time = mActivity.get().stampToDate(timeStamp);
             switch (msg.what) {
                 case UsbService.MESSAGE_FROM_SERIAL_PORT:
                     String data = (String) msg.obj;
-                    mActivity.get().display.append(data);
+                    //mActivity.get().display.append("("+time+"):"+data+"\n");
+                    String displayString = "("+time+"):"+data;
+                    SpannableString spannableString = new SpannableString(displayString);
+                    ForegroundColorSpan colorSpan = new ForegroundColorSpan(Color.GREEN);
+                    spannableString.setSpan(colorSpan, 0, displayString.length(), Spannable.SPAN_EXCLUSIVE_INCLUSIVE);
+
+                    mActivity.get().display.append(spannableString);
                     break;
                 case UsbService.CTS_CHANGE:
                     Toast.makeText(mActivity.get(), "CTS_CHANGE",Toast.LENGTH_LONG).show();
@@ -188,7 +228,34 @@ public class MainActivity extends AppCompatActivity {
                     break;
                 case UsbService.SYNC_READ:
                     String buffer = (String) msg.obj;
-                    mActivity.get().display.append(buffer);
+
+                    //mActivity.get().display.append("("+time+"):"+buffer+"\n");
+
+                    String disString = "("+time+"):"+buffer;
+                    SpannableString spanString = new SpannableString(disString);
+                    ForegroundColorSpan colSpan = new ForegroundColorSpan(Color.GREEN);
+                    spanString.setSpan(colSpan, 0, disString.length(), Spannable.SPAN_EXCLUSIVE_INCLUSIVE);
+
+                    mActivity.get().display.append(spanString);
+                    break;
+
+                case UsbService.MESSAGE_ACCELERATOR:
+                    UsbService.AcceleratorData acc = (UsbService.AcceleratorData) msg.obj;
+                    String accStr = "( X: "+acc.mX+", Y: "+ acc.mY + ", Z: " + acc.mZ + " )";
+                    mActivity.get().txtview_acc_value.setText(accStr);
+                    //mActivity.get().txtview_acc_value.invalidate();
+                    break;
+                case UsbService.MESSAGE_GYROSCOPE:
+                    UsbService.GyroscopeData gyro = (UsbService.GyroscopeData) msg.obj;
+                    String gyroStr = "( X: "+gyro.mX+", Y: "+ gyro.mY + ", Z: " + gyro.mZ + " )";
+                    mActivity.get().txtview_gyro_value.setText(gyroStr);
+                    //mActivity.get().txtview_gyro_value.invalidate();
+                    break;
+                case UsbService.MESSAGE_ERR_RATE:
+                    String errRate = (String) msg.obj;
+
+                    mActivity.get().txtview_err_rate.setText(errRate);
+                    //mActivity.get().txtview_gyro_value.invalidate();
                     break;
             }
         }

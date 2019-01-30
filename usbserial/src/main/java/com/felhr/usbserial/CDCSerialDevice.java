@@ -87,6 +87,7 @@ public class CDCSerialDevice extends UsbSerialDevice
             requestIN.initialize(connection, inEndpoint);
 
             // Restart the working thread if it has been killed before and  get and claim interface
+            restartBufferThread();
             restartWorkingThread();
             restartWriteThread();
 
@@ -108,6 +109,7 @@ public class CDCSerialDevice extends UsbSerialDevice
     public void close()
     {
         setControlCommand(CDC_SET_CONTROL_LINE_STATE, CDC_CONTROL_LINE_OFF, null);
+        killBufferThread();
         killWorkingThread();
         killWriteThread();
         connection.releaseInterface(mInterface);
