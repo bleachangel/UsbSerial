@@ -14,18 +14,26 @@ import android.os.Handler;
 import android.os.IBinder;
 import android.util.Log;
 
+import com.felhr.madsessions.MadSession;
+import com.felhr.madsessions.MadSessionManager;
+import com.felhr.sensors.MadSensor;
+import com.felhr.sensors.MadSensorEvent;
+import com.felhr.sensors.MadSensorEventListener;
+import com.felhr.sensors.MadSensorManager;
 import com.felhr.usbserial.CDCSerialDevice;
 import com.felhr.usbserial.UsbSerialDevice;
 import com.felhr.usbserial.UsbSerialInterface;
 
 import java.io.UnsupportedEncodingException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 
-public class UsbService extends Service {
+public class MadSensorService extends Service {
 
-    public static final String TAG = "UsbService";
+    public static final String TAG = "MadSensorService";
 
     public static final String ACTION_USB_READY = "com.felhr.connectivityservices.USB_READY";
     public static final String ACTION_USB_ATTACHED = "android.hardware.usb.action.USB_DEVICE_ATTACHED";
@@ -59,7 +67,8 @@ public class UsbService extends Service {
     private UsbDevice device;
     private UsbDeviceConnection connection;
     private UsbSerialDevice serialPort;
-
+    private MadSensorManager mSensorManager;
+    //private MadSession mSession = null;
     private boolean serialPortConnected;
 
     public class AcceleratorData extends AbstractSensorData {
@@ -92,82 +101,31 @@ public class UsbService extends Service {
         }
     }
 
-    /*
-     *  Data received from serial port will be received here. Just populate onReceivedData with your code
-     *  In this particular example. byte stream is converted to String and send to UI thread to
-     *  be treated there.
-     */
-    private UsbSerialInterface.UsbReadCallback mCallback = new UsbSerialInterface.UsbReadCallback() {
-        @Override
-        public void onReceivedData(byte[] arg0) {
-            try {
-                String data = new String(arg0, "UTF-8");
-                if (mHandler != null) {
-                    switch (arg0[0]){
-                        case UsbSerialDevice.MESSAGE_TAG_ACELERATOR:
-                            if(arg0.length >= 13) {
-                                int x = Integer.parseInt(String.valueOf((char) arg0[4]), 16) << 12
-                                        | Integer.parseInt(String.valueOf((char) arg0[3]), 16) << 8
-                                        | Integer.parseInt(String.valueOf((char) arg0[2]), 16) << 4
-                                        | Integer.parseInt(String.valueOf((char) arg0[1]), 16);
+    private HashMap<MadSensor, MadSensorEventListener> mSensorListeners = new HashMap<MadSensor, MadSensorEventListener>();
+    public boolean registerListener(MadSensorEventListener listener, MadSensor sensor, int delayUs){
+        mSensorListeners.put(sensor, listener);
+        return true;
+    }
 
-                                int y = Integer.parseInt(String.valueOf((char) arg0[8]), 16) << 12
-                                        | Integer.parseInt(String.valueOf((char) arg0[7]), 16) << 8
-                                        | Integer.parseInt(String.valueOf((char) arg0[6]), 16) << 4
-                                        | Integer.parseInt(String.valueOf((char) arg0[5]), 16);
-
-                                int z = Integer.parseInt(String.valueOf((char) arg0[12]), 16) << 12
-                                        | Integer.parseInt(String.valueOf((char) arg0[11]), 16) << 8
-                                        | Integer.parseInt(String.valueOf((char) arg0[10]), 16) << 4
-                                        | Integer.parseInt(String.valueOf((char) arg0[9]), 16);
-                                AcceleratorData acc = new AcceleratorData(x, y, z);
-
-                                mHandler.obtainMessage(MESSAGE_ACCELERATOR, acc).sendToTarget();
-                            }
-                            break;
-                        case UsbSerialDevice.MESSAGE_TAG_GYROSCOPE:
-                            if(arg0.length >= 13) {
-                                int x = Integer.parseInt(String.valueOf((char) arg0[4]), 16) << 12
-                                        | Integer.parseInt(String.valueOf((char) arg0[3]), 16) << 8
-                                        | Integer.parseInt(String.valueOf((char) arg0[2]), 16) << 4
-                                        | Integer.parseInt(String.valueOf((char) arg0[1]), 16);
-
-                                int y = Integer.parseInt(String.valueOf((char) arg0[8]), 16) << 12
-                                        | Integer.parseInt(String.valueOf((char) arg0[7]), 16) << 8
-                                        | Integer.parseInt(String.valueOf((char) arg0[6]), 16) << 4
-                                        | Integer.parseInt(String.valueOf((char) arg0[5]), 16);
-
-                                int z = Integer.parseInt(String.valueOf((char) arg0[12]), 16) << 12
-                                        | Integer.parseInt(String.valueOf((char) arg0[11]), 16) << 8
-                                        | Integer.parseInt(String.valueOf((char) arg0[10]), 16) << 4
-                                        | Integer.parseInt(String.valueOf((char) arg0[9]), 16);
-                                GyroscopeData gyro = new GyroscopeData(x, y, z);
-
-                                mHandler.obtainMessage(MESSAGE_GYROSCOPE, gyro).sendToTarget();
-                            }
-                            break;
-                        case UsbSerialDevice.MESSAGE_TAG_MAGNETIC:
-                            mHandler.obtainMessage(MESSAGE_MAGNETIC, data).sendToTarget();
-                            break;
-                        case UsbSerialDevice.MESSAGE_TAG_ALS:
-                            mHandler.obtainMessage(MESSAGE_ALS, data).sendToTarget();
-                            break;
-                        case UsbSerialDevice.MESSAGE_TAG_PS:
-                            mHandler.obtainMessage(MESSAGE_PS, data).sendToTarget();
-                            break;
-                    }
-                    //mHandler.obtainMessage(MESSAGE_FROM_SERIAL_PORT, data).sendToTarget();
-                }
-
-                String errRate = "( err: " + serialPort.getErrCount() + ", analyzed: " + serialPort.getAnalyzedCount() + ", received: " + serialPort.getRecvCount() + " )";
-                mHandler.obtainMessage(MESSAGE_ERR_RATE, errRate).sendToTarget();
-            } catch (UnsupportedEncodingException e) {
-                e.printStackTrace();
-            } catch (RuntimeException e1){
-                e1.printStackTrace();
+    public boolean unregisterListener(MadSensorEventListener listener){
+        Iterator<Map.Entry<MadSensor, MadSensorEventListener>> keys = mSensorListeners.entrySet().iterator();
+        while(keys.hasNext()){
+            Map.Entry<MadSensor, MadSensorEventListener> key = keys.next();
+            if(key.getValue().equals(listener)){
+                keys.remove();
             }
         }
-    };
+
+        return true;
+    }
+
+    public void dispatchSensorEvent(MadSensor sensor, MadSensorEvent event){
+        if(mSensorListeners == null || sensor == null || event == null){
+            return ;
+        }
+        MadSensorEventListener listener = mSensorListeners.get(sensor);
+        listener.onMadSensorChanged(event);
+    }
 
     /*
      * State changes in the CTS line will be received here
@@ -204,27 +162,71 @@ public class UsbService extends Service {
                     Intent intent = new Intent(ACTION_USB_PERMISSION_GRANTED);
                     arg0.sendBroadcast(intent);
                     connection = usbManager.openDevice(device);
-                    new ConnectionThread().start();
+                    //new ConnectionThread().start();
+                    //mSession = new MadSession();
+                    //mSession.connect(device, connection);
+                    MadSessionManager.getInstance().connect(device, connection);
+                    MadSensorManager.init();
+                    //mSensorManager = new MadSensorManager();
                 } else // User not accepted our USB connection. Send an Intent to the Main Activity
                 {
                     Intent intent = new Intent(ACTION_USB_PERMISSION_NOT_GRANTED);
                     arg0.sendBroadcast(intent);
                 }
             } else if (arg1.getAction().equals(ACTION_USB_ATTACHED)) {
-                if (!serialPortConnected)
+                //if (!serialPortConnected)
                     findSerialPortDevice(); // A USB device has been attached. Try to open it as a Serial port
             } else if (arg1.getAction().equals(ACTION_USB_DETACHED)) {
                 // Usb device was disconnected. send an intent to the Main Activity
                 Intent intent = new Intent(ACTION_USB_DISCONNECTED);
                 arg0.sendBroadcast(intent);
-                if (serialPortConnected) {
+                //if (serialPortConnected) {
                     //serialPort.syncClose();
-                    serialPort.close();
-                }
-                serialPortConnected = false;
+                    //serialPort.close();
+                //}
+                //serialPortConnected = false;
+                //mSession.close();
+                //mSession = null;
+                //mSensorManager = null;
+                MadSensorManager.deinit();
+                MadSessionManager.getInstance().disconnect();
             }
         }
     };
+
+    protected class SensorServiceThread extends Thread {
+        private volatile boolean keep = true;
+
+        public SensorServiceThread() {}
+
+        void stopThread() {
+            keep = false;
+        }
+
+        @Override
+        public void run() {
+            while (keep) {
+                int sensorSize = MadSensorManager.mSensorList.size();
+
+                for (int i = 0; i < sensorSize; i++) {
+                    MadSensor sensor = MadSensorManager.mSensorList.get(i);
+                    if (sensor.isEnabled()) {
+                        if(!sensor.isInited()){
+                            sensor.init();
+                        }
+
+                        dispatchSensorEvent(sensor, sensor.read());
+                    }
+                }
+
+                try {
+                    sleep(10);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+    }
 
     /*
      * onCreate will be executed when service is started. It configures an IntentFilter to listen for
@@ -233,11 +235,13 @@ public class UsbService extends Service {
     @Override
     public void onCreate() {
         this.context = this;
-        serialPortConnected = false;
-        UsbService.SERVICE_CONNECTED = true;
+        //serialPortConnected = false;
+        MadSensorService.SERVICE_CONNECTED = true;
         setFilter();
         usbManager = (UsbManager) getSystemService(Context.USB_SERVICE);
         findSerialPortDevice();
+
+        new SensorServiceThread().start();
     }
 
     /* MUST READ about services
@@ -257,19 +261,29 @@ public class UsbService extends Service {
     @Override
     public void onDestroy() {
         super.onDestroy();
-        serialPort.close();
+        //serialPort.close();
+        //mSession.close();
+        //mSession = null;
         unregisterReceiver(usbReceiver);
-        UsbService.SERVICE_CONNECTED = false;
+        MadSensorService.SERVICE_CONNECTED = false;
     }
 
     /*
      * This function will be called from MainActivity to write data through Serial Port
      */
     public void write(byte[] data) {
-        if (serialPort != null) {
+        /*if (serialPort != null) {
             //serialPort.syncWrite(data, 0);
             serialPort.write(data);
-        }
+        }*/
+    }
+
+    public byte[] readI2C(byte channel, byte slaveAddr, int regAddr, byte regAddrMode, int size){
+        //if(mSession != null) {
+        //    return mSession.readI2C(channel, slaveAddr, regAddr, regAddrMode, size, 50);
+        //}
+
+        return null;
     }
 
     /*
@@ -277,8 +291,8 @@ public class UsbService extends Service {
      */
 
     public void changeBaudRate(int baudRate){
-        if(serialPort != null)
-            serialPort.setBaudRate(baudRate);
+        /*if(serialPort != null)
+            serialPort.setBaudRate(baudRate);*/
     }
 
     public void setHandler(Handler mHandler) {
@@ -346,8 +360,8 @@ public class UsbService extends Service {
     }
 
     public class UsbBinder extends Binder {
-        public UsbService getService() {
-            return UsbService.this;
+        public MadSensorService getService() {
+            return MadSensorService.this;
         }
     }
 
@@ -355,6 +369,7 @@ public class UsbService extends Service {
      * A simple thread to open a serial port.
      * Although it should be a fast operation. moving usb operations away from UI thread is a good thing.
      */
+    /*
     private class ConnectionThread extends Thread {
         @Override
         public void run() {
@@ -367,12 +382,12 @@ public class UsbService extends Service {
                     serialPort.setDataBits(UsbSerialInterface.DATA_BITS_8);
                     serialPort.setStopBits(UsbSerialInterface.STOP_BITS_1);
                     serialPort.setParity(UsbSerialInterface.PARITY_NONE);
-                    /**
+                    *//**
                      * Current flow control Options:
                      * UsbSerialInterface.FLOW_CONTROL_OFF
                      * UsbSerialInterface.FLOW_CONTROL_RTS_CTS only for CP2102 and FT232
                      * UsbSerialInterface.FLOW_CONTROL_DSR_DTR only for CP2102 and FT232
-                     */
+                     *//*
                     serialPort.setFlowControl(UsbSerialInterface.FLOW_CONTROL_OFF);
                     serialPort.setReadCallback(mCallback);
                     serialPort.getCTS(ctsCallback);
@@ -405,7 +420,7 @@ public class UsbService extends Service {
                 context.sendBroadcast(intent);
             }
         }
-    }
+    }*/
 /*
     private class ReadThread extends Thread {
         @Override

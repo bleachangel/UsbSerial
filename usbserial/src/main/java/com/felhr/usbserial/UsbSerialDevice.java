@@ -4,6 +4,8 @@ import com.felhr.deviceids.CH34xIds;
 import com.felhr.deviceids.CP210xIds;
 import com.felhr.deviceids.FTDISioIds;
 import com.felhr.deviceids.PL2303Ids;
+import com.felhr.protocal.ProtocalCmd;
+import com.felhr.protocal.SerialRingBuffer;
 
 import android.hardware.usb.UsbConstants;
 import android.hardware.usb.UsbDevice;
@@ -25,12 +27,6 @@ public abstract class UsbSerialDevice implements UsbSerialInterface {
     protected static final String COM_PORT = "COM ";
     protected static final int USB_TIMEOUT = 0;
     private static final boolean mr1Version;
-
-    public static final byte MESSAGE_TAG_ACELERATOR = 'L';
-    public static final byte MESSAGE_TAG_GYROSCOPE = 'G';
-    public static final byte MESSAGE_TAG_MAGNETIC = 'M';
-    public static final byte MESSAGE_TAG_ALS = 'S';
-    public static final byte MESSAGE_TAG_PS = 'P';
 
     // Get Android version if version < 4.3 It is not going to be asynchronous read operations
     static {
@@ -148,8 +144,9 @@ public abstract class UsbSerialDevice implements UsbSerialInterface {
 
     @Override
     public void write(byte[] buffer) {
-        if (asyncMode)
+        if (asyncMode) {
             serialBuffer.putWriteBuffer(buffer);
+        }
     }
 
     /**
@@ -488,8 +485,8 @@ public abstract class UsbSerialDevice implements UsbSerialInterface {
         }
 
         private void onReceivedData(byte[] data) {
-            if (callback != null)
-                callback.onReceivedData(data);
+            //if (callback != null)
+                //callback.onReceivedData(null);
         }
     }
 
@@ -506,23 +503,15 @@ public abstract class UsbSerialDevice implements UsbSerialInterface {
 
         @Override
         public void doRun() {
-            onReceivedData(analyzeBuffer.get(MIN_TAG_LEN));
+            ProtocalCmd result = analyzeBuffer.get();
+            if(result !=null && result.getSessionID() != -1){
+                if(callback != null)
+                    callback.onReceivedData(result);
+            }
         }
 
         public void setCallback(UsbReadCallback callback) {
             this.callback = callback;
-        }
-
-        private void onReceivedData(byte[] data) {
-            if(data != null) {
-                if (callback != null) {
-                    //解析消息头
-                    //String temp = new String(data);
-                    //String[] message = temp.split("GY|AL|MG|PS|AS");
-                    //for(int i = 0; i < Arrays.)
-                    callback.onReceivedData(data);
-                }
-            }
         }
     }
 }

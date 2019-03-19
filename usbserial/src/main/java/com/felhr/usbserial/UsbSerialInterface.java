@@ -1,5 +1,7 @@
 package com.felhr.usbserial;
 
+import com.felhr.protocal.ProtocalCmd;
+
 /**
  * Interface to handle a serial port
  * @author felhr (felhr85@gmail.com)
@@ -93,7 +95,7 @@ public interface UsbSerialInterface
     // Usb Read Callback
     interface UsbReadCallback
     {
-        void onReceivedData(byte[] data);
+        void onReceivedData(ProtocalCmd cmd);
     }
 
 }
