@@ -34,7 +34,6 @@ public class LTR579 {
             return false;
         }
 
-
         if(status.length != len){
             return false;
         }
@@ -61,7 +60,7 @@ public class LTR579 {
             return false;
         }
 
-        if(status.length == 1){
+        if(status.length != 1){
             return false;
         }
 

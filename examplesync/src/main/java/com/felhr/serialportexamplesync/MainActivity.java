@@ -83,11 +83,11 @@ public class MainActivity extends AppCompatActivity implements MadSensorEventLis
         public void onServiceConnected(ComponentName arg0, IBinder arg1) {
             mSensorService = ((MadSensorService.UsbBinder) arg1).getService();
             mSensorService.setHandler(mHandler);
-            //mSensorService.registerListener(instance, mMagSensor, 1000);
-            //mSensorService.registerListener(instance, mAccSensor, 1000);
+            mSensorService.registerListener(instance, mMagSensor, 1000);
+            mSensorService.registerListener(instance, mAccSensor, 1000);
             mSensorService.registerListener(instance, mGyroSensor, 1000);
             mSensorService.registerListener(instance, mAlsSensor, 1000);
-            //mSensorService.registerListener(instance, mPsSensor, 1000);
+            mSensorService.registerListener(instance, mPsSensor, 1000);
         }
 
         @Override
@@ -128,11 +128,11 @@ public class MainActivity extends AppCompatActivity implements MadSensorEventLis
                     mEnable = true;
                 }
 
-                //mMagSensor.enable(mEnable);
-                //mAccSensor.enable(mEnable);
+                mMagSensor.enable(mEnable);
+                mAccSensor.enable(mEnable);
                 mGyroSensor.enable(mEnable);
                 mAlsSensor.enable(mEnable);
-                //mPsSensor.enable(mEnable);
+                mPsSensor.enable(mEnable);
             }
         });
     }
@@ -143,21 +143,21 @@ public class MainActivity extends AppCompatActivity implements MadSensorEventLis
         setFilters();  // Start listening notifications from MadSensorService
         startService(MadSensorService.class, usbConnection, null); // Start MadSensorService(if it was not started before) and Bind it
 
-        //mMagSensor = MadSensorManager.CreateSensor(MadSensorManager.MAD_SENSOR_TYPE_MAGNETIC);
-        //mAccSensor = MadSensorManager.CreateSensor(MadSensorManager.MAD_SENSOR_TYPE_ACCELERATOR);
+        mMagSensor = MadSensorManager.CreateSensor(MadSensorManager.MAD_SENSOR_TYPE_MAGNETIC);
+        mAccSensor = MadSensorManager.CreateSensor(MadSensorManager.MAD_SENSOR_TYPE_ACCELERATOR);
         mGyroSensor = MadSensorManager.CreateSensor(MadSensorManager.MAD_SENSOR_TYPE_GYROSCOPE);
         mAlsSensor = MadSensorManager.CreateSensor(MadSensorManager.MAD_SENSOR_TYPE_AMBIENT_LIGHT);
-        //mPsSensor = MadSensorManager.CreateSensor(MadSensorManager.MAD_SENSOR_TYPE_PROXIMITY);
+        mPsSensor = MadSensorManager.CreateSensor(MadSensorManager.MAD_SENSOR_TYPE_PROXIMITY);
     }
 
     @Override
     public void onPause() {
         super.onPause();
-        //MadSensorManager.DestorySensor(mMagSensor);
-        //MadSensorManager.DestorySensor(mAccSensor);
+        MadSensorManager.DestorySensor(mMagSensor);
+        MadSensorManager.DestorySensor(mAccSensor);
         MadSensorManager.DestorySensor(mGyroSensor);
         MadSensorManager.DestorySensor(mAlsSensor);
-        //MadSensorManager.DestorySensor(mPsSensor);
+        MadSensorManager.DestorySensor(mPsSensor);
         mMagSensor = null;
         mAccSensor = null;
         mGyroSensor = null;
