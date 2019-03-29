@@ -21,6 +21,7 @@ public class SerialRingBuffer {
     static final int MIN_BUFFER_SIZE = 1024;
     private byte[] mRingBuffer;
     public static int MESSAGE_CMD_TAG_LEN = 4;
+    private boolean bEndTag = false;
 
     public SerialRingBuffer(int capacity){
         if(capacity < MIN_BUFFER_SIZE){
@@ -95,13 +96,21 @@ public class SerialRingBuffer {
                 int next3 = (curPos + 3) % mCapacity;
                 if (mRingBuffer[curPos] == CmdResultFactory.CMD_START_TAG
                         && ((mRingBuffer[next1] == 'S'&& mRingBuffer[next2] == 'T'&& mRingBuffer[next3] == 'P')
-                        ||(mRingBuffer[next1] == 'G'&& mRingBuffer[next2] == 'E'&& mRingBuffer[next3] == 'T')
                         ||(mRingBuffer[next1] == 'T'&& mRingBuffer[next2] == 'S'&& mRingBuffer[next3] == 'T')
                         ||(mRingBuffer[next1] == 'R'&& mRingBuffer[next2] == 'S'&& mRingBuffer[next3] == 'T')
                         ||(mRingBuffer[next1] == 'I'&& mRingBuffer[next2] == '2'&& mRingBuffer[next3] == 'R')
                         ||(mRingBuffer[next1] == 'I'&& mRingBuffer[next2] == '2'&& mRingBuffer[next3] == 'W')
                         ||(mRingBuffer[next1] == 'I'&& mRingBuffer[next2] == 'O'&& mRingBuffer[next3] == 'R')
-                        ||(mRingBuffer[next1] == 'I'&& mRingBuffer[next2] == 'O'&& mRingBuffer[next3] == 'W'))) {
+                        ||(mRingBuffer[next1] == 'I'&& mRingBuffer[next2] == 'O'&& mRingBuffer[next3] == 'W')
+                        ||(mRingBuffer[next1] == 'S'&& mRingBuffer[next2] == 'V'&& mRingBuffer[next3] == 'L')
+                        ||(mRingBuffer[next1] == 'G'&& mRingBuffer[next2] == 'V'&& mRingBuffer[next3] == 'L')
+                        ||(mRingBuffer[next1] == 'S'&& mRingBuffer[next2] == 'L'&& mRingBuffer[next3] == 'B')
+                        ||(mRingBuffer[next1] == 'G'&& mRingBuffer[next2] == 'L'&& mRingBuffer[next3] == 'B')
+                        ||(mRingBuffer[next1] == 'O'&& mRingBuffer[next2] == 'P'&& mRingBuffer[next3] == 'C')
+                        ||(mRingBuffer[next1] == 'C'&& mRingBuffer[next2] == 'L'&& mRingBuffer[next3] == 'C')
+                        ||(mRingBuffer[next1] == 'O'&& mRingBuffer[next2] == 'F'&& mRingBuffer[next3] == 'L')
+                        ||(mRingBuffer[next1] == 'C'&& mRingBuffer[next2] == 'F'&& mRingBuffer[next3] == 'L')
+                        ||(mRingBuffer[next1] == 'I'&& mRingBuffer[next2] == '2'&& mRingBuffer[next3] == 'C'))) {
                     mReadSize -= i;
                     mWriteSize += i;
                     mReadPosStart = (mReadPosStart + i) % mCapacity;
@@ -155,7 +164,9 @@ public class SerialRingBuffer {
         //origin str : token(4)+len(2)+session_id(4)+crc(4)+end(4)
         if(mReadSize > 14) {
             int invalid = 0;
-            for (int i = 0; i < mReadSize; i++) {
+            int i;
+            bEndTag = false;
+            for (i = 0; i < mReadSize; i++) {
                 int curPos = (mReadPosStart + i) % mCapacity;
                 int next1 = (curPos + 1) % mCapacity;
                 int next2 = (curPos + 2) % mCapacity;
@@ -203,12 +214,24 @@ public class SerialRingBuffer {
                         //统计错误率
                         addErrCount(dataLen);
                     }
+
+                    bEndTag = true;
                     break;
                 } else if(!((mRingBuffer[curPos] >= '0' && mRingBuffer[curPos] <= '9')
                         || (mRingBuffer[curPos] >= 'A' && mRingBuffer[curPos] <= 'F'))){
                     //无效数据
                     invalid = 1;
                 }
+            }
+
+            if(!bEndTag && invalid == 1){
+                int dataLen = i;
+                mReadSize -= dataLen;
+                mWriteSize += dataLen;
+                mReadPosStart = (mReadPosStart + dataLen) % mCapacity;
+
+                //统计错误率
+                addErrCount(dataLen);
             }
         }
 
@@ -235,7 +258,8 @@ public class SerialRingBuffer {
 
             para = getCmdPara();
             if(para == null){
-                restoreStatus();
+                if(!bEndTag)
+                    restoreStatus();
                 return null;
             }
         }

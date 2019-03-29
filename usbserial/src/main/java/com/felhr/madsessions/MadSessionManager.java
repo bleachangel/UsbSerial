@@ -22,6 +22,12 @@ public class MadSessionManager {
     private UsbSerialDevice mSerialDevice = null;
     private boolean mSerialPortConnected = false;
 
+    private long mSendCmdCount;
+    private long mSendByteCount;
+
+    private long mRecvCmdCount;
+    private long mRecvByteCount;
+
     private UsbSerialInterface.UsbReadCallback mCallback = new UsbSerialInterface.UsbReadCallback() {
         @Override
         public void onReceivedData(ProtocalCmd cmd) {
@@ -37,6 +43,10 @@ public class MadSessionManager {
     }
 
     private MadSessionManager() {
+        mSendCmdCount = 0;
+        mSendByteCount = 0;
+        mRecvCmdCount = 0;
+        mRecvByteCount = 0;
     }
 
     public boolean registerSession(int sessionID, MadSession session){
@@ -60,9 +70,6 @@ public class MadSessionManager {
 
     public boolean connect(UsbDevice device, UsbDeviceConnection connection){
         boolean ret = false;
-        //if(mSerialDevice != null){
-        //    return true;
-        //}
 
         mSerialDevice = UsbSerialDevice.createUsbSerialDevice(device, connection);
         if (mSerialDevice != null) {
@@ -124,5 +131,47 @@ public class MadSessionManager {
             mSessions.remove(sessionID);
         }
         return  true;
+    }
+
+    public void statSendCmd(int size){
+        synchronized (this) {
+            if (mSendCmdCount + 1 > Long.MAX_VALUE) {
+                mSendCmdCount = 0;
+            }
+            mSendCmdCount++;
+
+            if (mSendByteCount + size > Long.MAX_VALUE) {
+                mSendByteCount = 0;
+            }
+
+            mSendByteCount += size;
+        }
+    }
+
+    public void statRecvCmd(){
+        synchronized (this) {
+            if (mRecvCmdCount + 1 > Long.MAX_VALUE) {
+                mRecvCmdCount = 0;
+            }
+            mRecvCmdCount++;
+        }
+/*
+        if (mRecvByteCount + size > Long.MAX_VALUE) {
+            mRecvByteCount = 0;
+        }
+
+        mSendByteCount += size;*/
+    }
+
+    public long getSendCmdCount(){
+        return  mSendCmdCount;
+    }
+
+    public long getSendByteCount(){
+        return mSendByteCount;
+    }
+
+    public long getRecvCmdCount(){
+        return mRecvCmdCount;
     }
 }

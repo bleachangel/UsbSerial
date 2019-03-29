@@ -95,27 +95,27 @@ public class BMI160 {
         return mInstance;
     }
 
-    public boolean setAccConfig(MadSession sesson, byte rate){
+    public boolean setAccConfig(MadSession session, byte rate){
         byte[] conf = new byte[1];
         byte acc_us = 0;
         byte acc_bwp = 0x2;
         int size;
         conf[0] = (byte)((acc_us & 0x80) | (acc_bwp & 0x70)| (rate & 0x0F));
 
-        size = sesson.writeI2C(mChannel, mSlaveAddr, BMI160_USER_ACC_CONF_ADDR, MadSession.I2C_REGISTER_ADDR_MODE_8, conf, MadSession.RESULT_TIME_OUT);
+        size = session.writeI2C(mChannel, mSlaveAddr, BMI160_USER_ACC_CONF_ADDR, MadSession.I2C_REGISTER_ADDR_MODE_8, conf, MadSession.RESULT_TIME_OUT);
         return true;
     }
 
-    public boolean setAccRange(MadSession sesson, byte para){
+    public boolean setAccRange(MadSession session, byte para){
         byte[] range = new byte[1];
         int size;
         range[0] = (byte)((para & 0x0F));
 
-        size = sesson.writeI2C(mChannel, mSlaveAddr, BMI160_USER_ACC_RANGE_ADDR, MadSession.I2C_REGISTER_ADDR_MODE_8, range, MadSession.RESULT_TIME_OUT);
+        size = session.writeI2C(mChannel, mSlaveAddr, BMI160_USER_ACC_RANGE_ADDR, MadSession.I2C_REGISTER_ADDR_MODE_8, range, MadSession.RESULT_TIME_OUT);
         return true;
     }
 
-    public boolean setIntEnable(MadSession sesson, boolean enable){
+    public boolean setIntEnable(MadSession session, boolean enable){
         boolean ret = false;
         byte enableValue[] = new byte[3];
         if(enable){
@@ -127,7 +127,7 @@ public class BMI160 {
             enableValue[1] = 0x0;
             enableValue[2] = 0x0;
         }
-        int size = sesson.writeI2C(mChannel, mSlaveAddr, BMI160_USER_INT_EN_0_ADDR, MadSession.I2C_REGISTER_ADDR_MODE_8, enableValue, MadSession.RESULT_TIME_OUT);
+        int size = session.writeI2C(mChannel, mSlaveAddr, BMI160_USER_INT_EN_0_ADDR, MadSession.I2C_REGISTER_ADDR_MODE_8, enableValue, MadSession.RESULT_TIME_OUT);
         if(size == 3){
             ret = true;
         }
@@ -135,46 +135,50 @@ public class BMI160 {
         return ret;
     }
 
-    public boolean setAccPower(MadSession sesson, byte mode){
+    public boolean setAccPower(MadSession session, byte mode){
         byte[] state = new byte[1];
         int size;
 
         state[0] = (byte)mode;
-        size = sesson.writeI2C(mChannel, mSlaveAddr, BMI160_CMD_COMMANDS_ADDR, MadSession.I2C_REGISTER_ADDR_MODE_8, state, MadSession.RESULT_TIME_OUT);
+        size = session.writeI2C(mChannel, mSlaveAddr, BMI160_CMD_COMMANDS_ADDR, MadSession.I2C_REGISTER_ADDR_MODE_8, state, MadSession.RESULT_TIME_OUT);
         return true;
     }
 
-    public boolean enableAcc(MadSession sesson, boolean enable){
+    public boolean enableAcc(MadSession session, boolean enable){
         byte mode = CMD_PMU_ACC_SUSPEND;
         boolean ret = false;
         mEnableAcc = enable;
         if(mEnableAcc){
             mode = CMD_PMU_ACC_NORMAL;
+        } else {
+            if(0 != session.configI2C(mChannel, mSlaveAddr, BMI160_USER_ACC_DATA_ADDR, BMI160_CMD_COMMANDS_ADDR, CMD_PMU_ACC_NORMAL,MadSession.I2C_REGISTER_ADDR_MODE_8, (byte)0, (byte)6, MadSession.RESULT_TIME_OUT)){
+                return ret;
+            }
         }
 
-        if(setAccPower(sesson, mode)){
+        if(setAccPower(session, mode)){
             ret = true;
         }
         return ret;
     }
 
-    public boolean setGyConfig(MadSession sesson, byte rate){
+    public boolean setGyConfig(MadSession session, byte rate){
         byte[] conf = new byte[1];
         byte gy_bwp = 0x2;
         int size;
         conf[0] = (byte)((gy_bwp & 0x30)| (rate & 0x0F));
 
-        size = sesson.writeI2C(mChannel, mSlaveAddr, BMI160_USER_GYR_CONF_ADDR, MadSession.I2C_REGISTER_ADDR_MODE_8, conf, MadSession.RESULT_TIME_OUT);
+        size = session.writeI2C(mChannel, mSlaveAddr, BMI160_USER_GYR_CONF_ADDR, MadSession.I2C_REGISTER_ADDR_MODE_8, conf, MadSession.RESULT_TIME_OUT);
         return true;
     }
 
-    public boolean setGyRange(MadSession sesson, byte para){
+    public boolean setGyRange(MadSession session, byte para){
         byte[] range = new byte[1];
         int size;
         boolean ret = false;
         range[0] = (byte)((para & 0x03));
 
-        size = sesson.writeI2C(mChannel, mSlaveAddr, BMI160_USER_GYR_RANGE_ADDR, MadSession.I2C_REGISTER_ADDR_MODE_8, range, MadSession.RESULT_TIME_OUT);
+        size = session.writeI2C(mChannel, mSlaveAddr, BMI160_USER_GYR_RANGE_ADDR, MadSession.I2C_REGISTER_ADDR_MODE_8, range, MadSession.RESULT_TIME_OUT);
         if(size == 1){
             mGyRange = range[0];
             ret = true;
@@ -182,55 +186,64 @@ public class BMI160 {
         return ret;
     }
 
-    public boolean setGyPower(MadSession sesson, byte mode){
+    public boolean setGyPower(MadSession session, byte mode){
         byte[] state = new byte[1];
         int size;
         boolean ret = false;
 
         state[0] = (byte)mode;
-        size = sesson.writeI2C(mChannel, mSlaveAddr, BMI160_CMD_COMMANDS_ADDR, MadSession.I2C_REGISTER_ADDR_MODE_8, state, MadSession.RESULT_TIME_OUT);
+        size = session.writeI2C(mChannel, mSlaveAddr, BMI160_CMD_COMMANDS_ADDR, MadSession.I2C_REGISTER_ADDR_MODE_8, state, MadSession.RESULT_TIME_OUT);
         if(size == 1){
             ret = true;
         }
         return ret;
     }
 
-    public boolean enableGy(MadSession sesson, boolean enable){
+    public boolean enableGy(MadSession session, boolean enable){
         byte mode = CMD_PMU_GYRO_SUSPEND;
         boolean ret = false;
 
         mEnableGy = enable;
         if(mEnableGy){
             mode = CMD_PMU_GYRO_NORMAL;
+        } else {
+            if(0 != session.configI2C(mChannel, mSlaveAddr, BMI160_USER_GYR_DATA_ADDR, BMI160_CMD_COMMANDS_ADDR, CMD_PMU_GYRO_NORMAL,MadSession.I2C_REGISTER_ADDR_MODE_8, (byte)0, (byte)6, MadSession.RESULT_TIME_OUT)){
+                return ret;
+            }
         }
 
-        if(setGyPower(sesson, mode)){
+        if(setGyPower(session, mode)){
             ret = true;
         }
 
         return ret;
     }
 
-    public boolean init(MadSession sesson){
+    public boolean init(MadSession session){
         if(mInited){
             return true;
         }
 
         //read ic id
-        byte[] icID = sesson.readI2C(mChannel, mSlaveAddr, BMI160_USER_CHIP_ID_ADDR, MadSession.I2C_REGISTER_ADDR_MODE_8, 1,MadSession.RESULT_TIME_OUT);
+        byte[] icID = session.readI2C(mChannel, mSlaveAddr, BMI160_USER_CHIP_ID_ADDR, MadSession.I2C_REGISTER_ADDR_MODE_8, 1,MadSession.RESULT_TIME_OUT);
         if(icID == null){
             mInited = false;
             return  false;
         } else if(icID.length == 1 && (icID[0] == (byte)0xD0 || icID[0] == (byte)0xD1 || icID[0] == (byte)0xD3)) {
-            mInited = true;
-            setAccConfig(sesson, mAccODR);
-            setAccRange(sesson, mAccRange);
-            setIntEnable(sesson, false);
-            enableAcc(sesson, false);
+            if(0 != session.configI2C(mChannel, mSlaveAddr, BMI160_USER_ACC_DATA_ADDR, BMI160_CMD_COMMANDS_ADDR, CMD_PMU_ACC_NORMAL,MadSession.I2C_REGISTER_ADDR_MODE_8, (byte)1, (byte)6, MadSession.RESULT_TIME_OUT)){
+                return false;
+            }
 
-            setGyConfig(sesson, mGyODR);
-            setGyRange(sesson, mGyRange);
-            enableGy(sesson, false);
+            mInited = true;
+            //session.configI2C(mChannel, mSlaveAddr, BMI160_USER_GYR_DATA_ADDR, MadSession.I2C_REGISTER_ADDR_MODE_8, (byte)1, (byte)6, MadSession.RESULT_TIME_OUT);
+            setAccConfig(session, mAccODR);
+            setAccRange(session, mAccRange);
+            setIntEnable(session, false);
+            enableAcc(session, false);
+
+            setGyConfig(session, mGyODR);
+            setGyRange(session, mGyRange);
+            enableGy(session, false);
         }
         return true;
     }
@@ -240,28 +253,28 @@ public class BMI160 {
         return  true;
     }
 
-    public byte[] readAcc(MadSession sesson){
+    public byte[] readAcc(MadSession session){
         byte[] status = null;
-        if(enableAcc(sesson, true)) {
+        //if(enableAcc(session, true)) {
             int size = 6;
-            status = sesson.readI2C(mChannel, mSlaveAddr, BMI160_USER_ACC_DATA_ADDR, MadSession.I2C_REGISTER_ADDR_MODE_8, size, MadSession.RESULT_TIME_OUT);
+            status = session.readI2CAsync(mChannel, mSlaveAddr, BMI160_USER_ACC_DATA_ADDR, MadSession.I2C_REGISTER_ADDR_MODE_8, size, MadSession.RESULT_TIME_OUT);
             if (status == null || status.length != size) {
                 return null;
             }
-        }
+        //}
 
         return status;
     }
 
-    public byte[] readGy(MadSession sesson){
+    public byte[] readGy(MadSession session){
         byte[] status = null;
-        if(enableGy(sesson, true)) {
+        //if(enableGy(session, true)) {
             int size = 6;
-            status = sesson.readI2C(mChannel, mSlaveAddr, BMI160_USER_GYR_DATA_ADDR, MadSession.I2C_REGISTER_ADDR_MODE_8, size, MadSession.RESULT_TIME_OUT);
+            status = session.readI2CAsync(mChannel, mSlaveAddr, BMI160_USER_GYR_DATA_ADDR, MadSession.I2C_REGISTER_ADDR_MODE_8, size, MadSession.RESULT_TIME_OUT);
             if (status == null || status.length != size) {
                 return null;
             }
-        }
+        //}
 
         return status;
     }

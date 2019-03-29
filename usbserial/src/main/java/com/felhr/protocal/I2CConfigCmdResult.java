@@ -5,14 +5,14 @@ import com.felhr.utils.CRC16;
 import java.lang.reflect.Array;
 import java.util.Arrays;
 
-public class I2CWriteCmdResult extends ProtocalCmd {
+public class I2CConfigCmdResult extends ProtocalCmd {
     public int mChannel;
     public int mAddrBit; //0:8, 1:16
     public int mSlaveAddr;
     public int mRegAddr;
     public int mStatus;
 
-    public I2CWriteCmdResult(int cmd, byte[] para){
+    public I2CConfigCmdResult(int cmd, byte[] para){
         super();
         mCmdValue = cmd;
         mParaLen = (int)para[0];

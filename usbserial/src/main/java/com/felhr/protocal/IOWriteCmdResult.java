@@ -13,7 +13,7 @@ public class IOWriteCmdResult extends ProtocalCmd {
         super();
         mCmdValue = cmd;
         mParaLen = (int)para[0];
-        if(Array.getLength(para) > mParaLen) {
+        if(Array.getLength(para) > mParaLen && mParaLen > 0) {
             mCRC = ((para[mParaLen]<<8) & 0xFF00)| (para[mParaLen-1] &0xFF);
             int crc = CRC16.calc(Arrays.copyOfRange(para, 1, mParaLen - 1));
             if(mCRC == crc) {

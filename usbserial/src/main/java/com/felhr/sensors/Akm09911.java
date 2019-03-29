@@ -58,7 +58,8 @@ public class Akm09911 extends MadSensor {
         enable(true);
 
         int size = 9;
-        byte[] status = mSession.readI2C(mChannel, mSlaveAddr, 0x10, MadSession.I2C_REGISTER_ADDR_MODE_8, size,MadSession.RESULT_TIME_OUT);
+        //byte[] status = mSession.readI2C(mChannel, mSlaveAddr, 0x10, MadSession.I2C_REGISTER_ADDR_MODE_8, size,MadSession.RESULT_TIME_OUT);
+        byte[] status = mSession.readI2CAsync(mChannel, mSlaveAddr, 0x10, MadSession.I2C_REGISTER_ADDR_MODE_8, size,MadSession.RESULT_TIME_OUT);
         if(status == null || status.length != size){
             return null;
         }

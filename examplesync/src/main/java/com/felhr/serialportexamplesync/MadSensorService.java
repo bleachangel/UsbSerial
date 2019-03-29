@@ -268,33 +268,6 @@ public class MadSensorService extends Service {
         MadSensorService.SERVICE_CONNECTED = false;
     }
 
-    /*
-     * This function will be called from MainActivity to write data through Serial Port
-     */
-    public void write(byte[] data) {
-        /*if (serialPort != null) {
-            //serialPort.syncWrite(data, 0);
-            serialPort.write(data);
-        }*/
-    }
-
-    public byte[] readI2C(byte channel, byte slaveAddr, int regAddr, byte regAddrMode, int size){
-        //if(mSession != null) {
-        //    return mSession.readI2C(channel, slaveAddr, regAddr, regAddrMode, size, 50);
-        //}
-
-        return null;
-    }
-
-    /*
-     * This function will be called from MainActivity to change baud rate
-     */
-
-    public void changeBaudRate(int baudRate){
-        /*if(serialPort != null)
-            serialPort.setBaudRate(baudRate);*/
-    }
-
     public void setHandler(Handler mHandler) {
         this.mHandler = mHandler;
     }
@@ -365,78 +338,16 @@ public class MadSensorService extends Service {
         }
     }
 
-    /*
-     * A simple thread to open a serial port.
-     * Although it should be a fast operation. moving usb operations away from UI thread is a good thing.
-     */
-    /*
-    private class ConnectionThread extends Thread {
-        @Override
-        public void run() {
-            serialPort = UsbSerialDevice.createUsbSerialDevice(device, connection);
-            if (serialPort != null) {
-                //if (serialPort.syncOpen()) {
-                if (serialPort.open()) {
-                    serialPortConnected = true;
-                    serialPort.setBaudRate(BAUD_RATE);
-                    serialPort.setDataBits(UsbSerialInterface.DATA_BITS_8);
-                    serialPort.setStopBits(UsbSerialInterface.STOP_BITS_1);
-                    serialPort.setParity(UsbSerialInterface.PARITY_NONE);
-                    *//**
-                     * Current flow control Options:
-                     * UsbSerialInterface.FLOW_CONTROL_OFF
-                     * UsbSerialInterface.FLOW_CONTROL_RTS_CTS only for CP2102 and FT232
-                     * UsbSerialInterface.FLOW_CONTROL_DSR_DTR only for CP2102 and FT232
-                     *//*
-                    serialPort.setFlowControl(UsbSerialInterface.FLOW_CONTROL_OFF);
-                    serialPort.setReadCallback(mCallback);
-                    serialPort.getCTS(ctsCallback);
-                    serialPort.getDSR(dsrCallback);
+    public long getSendCmdCount(){
+        return  MadSessionManager.getInstance().getSendCmdCount();
+    }
 
-                    //new ReadThread().start();
+    public long getSendByteCount(){
+        return MadSessionManager.getInstance().getSendByteCount();
+    }
 
-                    //
-                    // Some Arduinos would need some sleep because firmware wait some time to know whether a new sketch is going
-                    // to be uploaded or not
-                    //Thread.sleep(2000); // sleep some. YMMV with different chips.
-
-                    // Everything went as expected. Send an intent to MainActivity
-                    Intent intent = new Intent(ACTION_USB_READY);
-                    context.sendBroadcast(intent);
-                } else {
-                    // Serial port could not be opened, maybe an I/O error or if CDC driver was chosen, it does not really fit
-                    // Send an Intent to Main Activity
-                    if (serialPort instanceof CDCSerialDevice) {
-                        Intent intent = new Intent(ACTION_CDC_DRIVER_NOT_WORKING);
-                        context.sendBroadcast(intent);
-                    } else {
-                        Intent intent = new Intent(ACTION_USB_DEVICE_NOT_WORKING);
-                        context.sendBroadcast(intent);
-                    }
-                }
-            } else {
-                // No driver for given device, even generic CDC driver could not be loaded
-                Intent intent = new Intent(ACTION_USB_NOT_SUPPORTED);
-                context.sendBroadcast(intent);
-            }
-        }
-    }*/
-/*
-    private class ReadThread extends Thread {
-        @Override
-        public void run() {
-            byte[] buffer = new byte[100];
-            while(true){
-                Arrays.fill(buffer, (byte)0);
-                int n = serialPort.syncRead(buffer, 0);
-                if(n > 0) {
-                    //byte[] received = new byte[n];
-                    //System.arraycopy(buffer, 0, received, 0, n);
-                    String receivedStr = new String(buffer);
-                    mHandler.obtainMessage(SYNC_READ, receivedStr).sendToTarget();
-                }
-            }
-        }
-    }*/
+    public long getRecvCmdCount(){
+        return MadSessionManager.getInstance().getRecvCmdCount();
+    }
 }
 

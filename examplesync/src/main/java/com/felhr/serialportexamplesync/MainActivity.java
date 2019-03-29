@@ -83,11 +83,11 @@ public class MainActivity extends AppCompatActivity implements MadSensorEventLis
         public void onServiceConnected(ComponentName arg0, IBinder arg1) {
             mSensorService = ((MadSensorService.UsbBinder) arg1).getService();
             mSensorService.setHandler(mHandler);
-            mSensorService.registerListener(instance, mMagSensor, 1000);
+            //mSensorService.registerListener(instance, mMagSensor, 1000);
             mSensorService.registerListener(instance, mAccSensor, 1000);
-            mSensorService.registerListener(instance, mGyroSensor, 1000);
-            mSensorService.registerListener(instance, mAlsSensor, 1000);
-            mSensorService.registerListener(instance, mPsSensor, 1000);
+            //mSensorService.registerListener(instance, mGyroSensor, 1000);
+            //mSensorService.registerListener(instance, mAlsSensor, 1000);
+            //mSensorService.registerListener(instance, mPsSensor, 1000);
         }
 
         @Override
@@ -122,17 +122,15 @@ public class MainActivity extends AppCompatActivity implements MadSensorEventLis
         sendButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if(mEnable){
-                    mEnable = false;
-                } else {
-                    mEnable = true;
-                }
+                mEnable = !mEnable;
 
-                mMagSensor.enable(mEnable);
-                mAccSensor.enable(mEnable);
-                mGyroSensor.enable(mEnable);
-                mAlsSensor.enable(mEnable);
-                mPsSensor.enable(mEnable);
+                //mMagSensor.enable(mEnable);
+                if(mAccSensor.enable(mEnable)){
+                    mEnable = !mEnable;
+                }
+                //mGyroSensor.enable(mEnable);
+                //mAlsSensor.enable(mEnable);
+                //mPsSensor.enable(mEnable);
             }
         });
     }
@@ -143,26 +141,26 @@ public class MainActivity extends AppCompatActivity implements MadSensorEventLis
         setFilters();  // Start listening notifications from MadSensorService
         startService(MadSensorService.class, usbConnection, null); // Start MadSensorService(if it was not started before) and Bind it
 
-        mMagSensor = MadSensorManager.CreateSensor(MadSensorManager.MAD_SENSOR_TYPE_MAGNETIC);
+        //mMagSensor = MadSensorManager.CreateSensor(MadSensorManager.MAD_SENSOR_TYPE_MAGNETIC);
         mAccSensor = MadSensorManager.CreateSensor(MadSensorManager.MAD_SENSOR_TYPE_ACCELERATOR);
-        mGyroSensor = MadSensorManager.CreateSensor(MadSensorManager.MAD_SENSOR_TYPE_GYROSCOPE);
-        mAlsSensor = MadSensorManager.CreateSensor(MadSensorManager.MAD_SENSOR_TYPE_AMBIENT_LIGHT);
-        mPsSensor = MadSensorManager.CreateSensor(MadSensorManager.MAD_SENSOR_TYPE_PROXIMITY);
+        //mGyroSensor = MadSensorManager.CreateSensor(MadSensorManager.MAD_SENSOR_TYPE_GYROSCOPE);
+        //mAlsSensor = MadSensorManager.CreateSensor(MadSensorManager.MAD_SENSOR_TYPE_AMBIENT_LIGHT);
+        //mPsSensor = MadSensorManager.CreateSensor(MadSensorManager.MAD_SENSOR_TYPE_PROXIMITY);
     }
 
     @Override
     public void onPause() {
         super.onPause();
-        MadSensorManager.DestorySensor(mMagSensor);
+        //MadSensorManager.DestorySensor(mMagSensor);
         MadSensorManager.DestorySensor(mAccSensor);
-        MadSensorManager.DestorySensor(mGyroSensor);
-        MadSensorManager.DestorySensor(mAlsSensor);
-        MadSensorManager.DestorySensor(mPsSensor);
-        mMagSensor = null;
+        //MadSensorManager.DestorySensor(mGyroSensor);
+        //MadSensorManager.DestorySensor(mAlsSensor);
+        //MadSensorManager.DestorySensor(mPsSensor);
+        //mMagSensor = null;
         mAccSensor = null;
-        mGyroSensor = null;
-        mAlsSensor = null;
-        mPsSensor = null;
+        //mGyroSensor = null;
+        //mAlsSensor = null;
+        //mPsSensor = null;
         unregisterReceiver(mUsbReceiver);
         unbindService(usbConnection);
     }
@@ -225,12 +223,13 @@ public class MainActivity extends AppCompatActivity implements MadSensorEventLis
             default:
                 break;
         }
-
-        Message ratemsg = mHandler.obtainMessage();
-        ratemsg.what = MadSensorService.MESSAGE_ERR_RATE;
-        String rateString = "send cmd count : "+event.sensor.mSession.getSendCmdCount()+",recv : "+event.sensor.mSession.getRecvCmdCount();
-        ratemsg.obj = rateString;
-        ratemsg.sendToTarget();
+        if(mSensorService!= null) {
+            Message ratemsg = mHandler.obtainMessage();
+            ratemsg.what = MadSensorService.MESSAGE_ERR_RATE;
+            String rateString = "send : " + mSensorService.getSendCmdCount() + ",recv : " + mSensorService.getRecvCmdCount();
+            ratemsg.obj = rateString;
+            ratemsg.sendToTarget();
+        }
     }
 
     @Override
@@ -267,7 +266,6 @@ public class MainActivity extends AppCompatActivity implements MadSensorEventLis
                     MadSensorEvent acc = (MadSensorEvent)msg.obj;
                     String accStr = "( X: "+acc.values[0]+", Y: "+ acc.values[1] + ", Z: " + acc.values[2] + " )";
                     mActivity.get().txtview_acc_value.setText(accStr);
-                    //mActivity.get().txtview_acc_value.invalidate();
                     break;
                 case MadSensorService.MESSAGE_GYROSCOPE:
                     MadSensorEvent gyro = (MadSensorEvent) msg.obj;

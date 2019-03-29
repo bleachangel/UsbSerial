@@ -132,7 +132,7 @@ public class LTR579 {
         byte[] status = null;
         if(enablePs(sesson, true)) {
             int size = 2;
-            status = sesson.readI2C(mChannel, mSlaveAddr, 0x8, MadSession.I2C_REGISTER_ADDR_MODE_8, size, MadSession.RESULT_TIME_OUT);
+            status = sesson.readI2CAsync(mChannel, mSlaveAddr, 0x8, MadSession.I2C_REGISTER_ADDR_MODE_8, size, MadSession.RESULT_TIME_OUT);
             if (status == null || status.length != size) {
                 return null;
             }
@@ -145,7 +145,7 @@ public class LTR579 {
         byte[] status = null;
         if(enableAls(sesson, true)) {
             int size = 3;
-            status = sesson.readI2C(mChannel, mSlaveAddr, 0xD, MadSession.I2C_REGISTER_ADDR_MODE_8, size, MadSession.RESULT_TIME_OUT);
+            status = sesson.readI2CAsync(mChannel, mSlaveAddr, 0xD, MadSession.I2C_REGISTER_ADDR_MODE_8, size, MadSession.RESULT_TIME_OUT);
             if (status == null || status.length != size) {
                 return null;
             }
