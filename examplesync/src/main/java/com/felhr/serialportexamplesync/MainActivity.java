@@ -109,7 +109,6 @@ public class MainActivity extends AppCompatActivity implements MadSensorEventLis
         setContentView(R.layout.activity_main);
         instance = this;
         mHandler = new MyHandler(this);
-        mEnable = false;
 
         txtview_mag_value = (TextView) findViewById(R.id.txtview_mag_value);
         txtview_acc_value = (TextView) findViewById(R.id.txtview_acc_value);
@@ -122,10 +121,11 @@ public class MainActivity extends AppCompatActivity implements MadSensorEventLis
         sendButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                //boolean status = mAccSensor.isEnable();
+                mEnable = mAccSensor.isEnabled();
                 mEnable = !mEnable;
-
                 //mMagSensor.enable(mEnable);
-                if(mAccSensor.enable(mEnable)){
+                if(!mAccSensor.enable(mEnable)){
                     mEnable = !mEnable;
                 }
                 //mGyroSensor.enable(mEnable);
@@ -140,7 +140,7 @@ public class MainActivity extends AppCompatActivity implements MadSensorEventLis
         super.onResume();
         setFilters();  // Start listening notifications from MadSensorService
         startService(MadSensorService.class, usbConnection, null); // Start MadSensorService(if it was not started before) and Bind it
-
+        mEnable = false;
         //mMagSensor = MadSensorManager.CreateSensor(MadSensorManager.MAD_SENSOR_TYPE_MAGNETIC);
         mAccSensor = MadSensorManager.CreateSensor(MadSensorManager.MAD_SENSOR_TYPE_ACCELERATOR);
         //mGyroSensor = MadSensorManager.CreateSensor(MadSensorManager.MAD_SENSOR_TYPE_GYROSCOPE);
@@ -152,6 +152,7 @@ public class MainActivity extends AppCompatActivity implements MadSensorEventLis
     public void onPause() {
         super.onPause();
         //MadSensorManager.DestorySensor(mMagSensor);
+        mEnable = false;
         MadSensorManager.DestorySensor(mAccSensor);
         //MadSensorManager.DestorySensor(mGyroSensor);
         //MadSensorManager.DestorySensor(mAlsSensor);
