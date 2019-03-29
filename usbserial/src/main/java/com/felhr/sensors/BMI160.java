@@ -9,6 +9,7 @@ public class BMI160 {
     private static final byte BMI160_USER_INT_EN_0_ADDR=0x50;
     private static final byte BMI160_CMD_COMMANDS_ADDR=0x7E;
     private static final byte BMI160_USER_ACC_DATA_ADDR=0x12;
+    private static final byte BMI160_PMU_STATUS_ADDR=0x3;
     //acc configure
     private static final byte BMI160_ACCEL_ODR_RESERVED=0x00;
     private static final byte BMI160_ACCEL_ODR_0_78HZ=0x01;
@@ -144,6 +145,17 @@ public class BMI160 {
         return true;
     }
 
+    public int getAccPower(MadSession session){
+        byte[] state;
+        int size = 1;
+        int ret = -1;
+        state = session.readI2C(mChannel, mSlaveAddr, BMI160_PMU_STATUS_ADDR, MadSession.I2C_REGISTER_ADDR_MODE_8, size, MadSession.RESULT_TIME_OUT);
+        if(size == 1){
+            ret = (byte)((state[0] >>> 4)&0x3);
+        }
+        return ret;
+    }
+
     public boolean enableAcc(MadSession session, boolean enable){
         byte mode = CMD_PMU_ACC_SUSPEND;
         boolean ret = false;
@@ -151,9 +163,7 @@ public class BMI160 {
         if(mEnableAcc){
             mode = CMD_PMU_ACC_NORMAL;
         } else {
-            if(0 != session.configI2C(mChannel, mSlaveAddr, BMI160_USER_ACC_DATA_ADDR, BMI160_CMD_COMMANDS_ADDR, CMD_PMU_ACC_NORMAL,MadSession.I2C_REGISTER_ADDR_MODE_8, (byte)0, (byte)6, MadSession.RESULT_TIME_OUT)){
-                return ret;
-            }
+            session.configI2C(mChannel, mSlaveAddr, BMI160_USER_ACC_DATA_ADDR, BMI160_CMD_COMMANDS_ADDR, CMD_PMU_ACC_NORMAL,MadSession.I2C_REGISTER_ADDR_MODE_8, (byte)0, (byte)6, MadSession.RESULT_TIME_OUT);
         }
 
         if(setAccPower(session, mode)){
@@ -199,6 +209,17 @@ public class BMI160 {
         return ret;
     }
 
+    public int getGyPower(MadSession session){
+        byte[] state;
+        int size = 1;
+        int ret = -1;
+        state = session.readI2C(mChannel, mSlaveAddr, BMI160_PMU_STATUS_ADDR, MadSession.I2C_REGISTER_ADDR_MODE_8, size, MadSession.RESULT_TIME_OUT);
+        if(size == 1){
+            ret = (byte)((state[0] >>> 2)&0x3);
+        }
+        return ret;
+    }
+
     public boolean enableGy(MadSession session, boolean enable){
         byte mode = CMD_PMU_GYRO_SUSPEND;
         boolean ret = false;
@@ -207,9 +228,7 @@ public class BMI160 {
         if(mEnableGy){
             mode = CMD_PMU_GYRO_NORMAL;
         } else {
-            if(0 != session.configI2C(mChannel, mSlaveAddr, BMI160_USER_GYR_DATA_ADDR, BMI160_CMD_COMMANDS_ADDR, CMD_PMU_GYRO_NORMAL,MadSession.I2C_REGISTER_ADDR_MODE_8, (byte)0, (byte)6, MadSession.RESULT_TIME_OUT)){
-                return ret;
-            }
+            session.configI2C(mChannel, mSlaveAddr, BMI160_USER_GYR_DATA_ADDR, BMI160_CMD_COMMANDS_ADDR, CMD_PMU_GYRO_NORMAL,MadSession.I2C_REGISTER_ADDR_MODE_8, (byte)0, (byte)6, MadSession.RESULT_TIME_OUT);
         }
 
         if(setGyPower(session, mode)){

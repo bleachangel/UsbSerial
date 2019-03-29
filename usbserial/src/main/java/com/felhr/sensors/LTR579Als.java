@@ -30,6 +30,21 @@ public class LTR579Als extends MadSensor {
         return ret;
     }
 
+    @Override
+    public boolean getStatus() {
+        boolean ret = false;
+        int state = 0;
+        if((state = LTR579.getInstance().getAlsEnable(mSession)) >= 0){
+            if(state > 0) {
+                ret = true;
+            } else {
+                ret = false;
+            }
+        }
+
+        return  ret;
+    }
+
     public MadSensorEvent read(){
         byte[] status = LTR579.getInstance().readAls(mSession);
         if(status == null || status.length != 3){

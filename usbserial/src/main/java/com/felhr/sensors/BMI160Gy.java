@@ -35,6 +35,20 @@ public class BMI160Gy extends MadSensor {
         return ret;
     }
 
+    public boolean getStatus(){
+        boolean ret = false;
+        int state = 0;
+        if((state = BMI160.getInstance().getGyPower(mSession)) >= 0){
+            if(state > 0) {
+                ret = true;
+            } else {
+                ret = false;
+            }
+        }
+
+        return  ret;
+    }
+
     public MadSensorEvent read(){
         byte[] status = BMI160.getInstance().readGy(mSession);
         if(status == null || status.length != 6){

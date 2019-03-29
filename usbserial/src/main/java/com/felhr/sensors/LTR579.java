@@ -51,6 +51,17 @@ public class LTR579 {
         return ret;
     }
 
+    public int getAlsEnable(MadSession session){
+        byte[] state;
+        int size = 1;
+        int ret = -1;
+        state = session.readI2C(mChannel, mSlaveAddr, 0, MadSession.I2C_REGISTER_ADDR_MODE_8, size, MadSession.RESULT_TIME_OUT);
+        if(size == 1){
+            ret = (byte)((state[0] >>> 1)&0x1);
+        }
+        return ret;
+    }
+
     public boolean enablePs(MadSession sesson, boolean enable){
         boolean ret = false;
 
@@ -73,6 +84,17 @@ public class LTR579 {
         int size = sesson.writeI2C(mChannel, mSlaveAddr, 0x0, MadSession.I2C_REGISTER_ADDR_MODE_8, status, MadSession.RESULT_TIME_OUT);
         if(size == 1){
             ret = true;
+        }
+        return ret;
+    }
+
+    public int getPsEnable(MadSession session){
+        byte[] state;
+        int size = 1;
+        int ret = -1;
+        state = session.readI2C(mChannel, mSlaveAddr, 0, MadSession.I2C_REGISTER_ADDR_MODE_8, size, MadSession.RESULT_TIME_OUT);
+        if(size == 1){
+            ret = (byte)(state[0]&0x1);
         }
         return ret;
     }

@@ -54,6 +54,22 @@ public class Akm09911 extends MadSensor {
         return ret;
     }
 
+    @Override
+    public boolean getStatus() {
+        boolean ret = false;
+        byte[] state;
+        state = mSession.readI2C(mChannel, mSlaveAddr, 0x31, MadSession.I2C_REGISTER_ADDR_MODE_8, 1, MadSession.RESULT_TIME_OUT);
+        if(state != null && state.length == 1){
+            if(state[0] > 0) {
+                ret = true;
+            } else {
+                ret = false;
+            }
+        }
+
+        return  ret;
+    }
+
     public MadSensorEvent read(){
         enable(true);
 

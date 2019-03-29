@@ -26,5 +26,6 @@ public abstract class MadSensor {
 
     public abstract boolean init();
     public abstract boolean enable(boolean enable);
+    public abstract boolean getStatus();
     public abstract MadSensorEvent read();
 }

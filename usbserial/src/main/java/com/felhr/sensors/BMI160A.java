@@ -24,6 +24,20 @@ public class BMI160A extends MadSensor {
         return mInited;
     }
 
+    public boolean getStatus(){
+        boolean ret = false;
+        int state = 0;
+        if((state = BMI160.getInstance().getAccPower(mSession)) >= 0){
+            if(state > 0) {
+                ret = true;
+            } else {
+                ret = false;
+            }
+        }
+
+        return  ret;
+    }
+
     public boolean enable(boolean enable){
         boolean ret = false;
         mEnable = enable;
