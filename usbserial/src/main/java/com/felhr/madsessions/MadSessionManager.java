@@ -95,19 +95,25 @@ public class MadSessionManager {
     }
 
     public boolean isConnected(){
-        return  mSerialPortConnected;
+        synchronized (this) {
+            return mSerialPortConnected;
+        }
     }
 
     public UsbSerialDevice getSerialDevice(){
-        return mSerialDevice;
+        synchronized (this) {
+            return mSerialDevice;
+        }
     }
 
     public boolean disconnect(){
         boolean ret = false;
 
-        if(mSerialDevice != null){
-            mSerialDevice.close();
-            mSerialPortConnected = false;
+        synchronized (this) {
+            if (mSerialDevice != null) {
+                mSerialDevice.close();
+                mSerialPortConnected = false;
+            }
         }
         return ret;
     }
@@ -173,5 +179,21 @@ public class MadSessionManager {
 
     public long getRecvCmdCount(){
         return mRecvCmdCount;
+    }
+
+    public long getRecvByteCount(){
+        if(mSerialDevice == null){
+            return 0;
+        }
+
+        return mSerialDevice.getRecvCount();
+    }
+
+    public long getRecvErrCount(){
+        if(mSerialDevice == null){
+            return 0;
+        }
+
+        return mSerialDevice.getErrCount();
     }
 }

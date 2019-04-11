@@ -12,13 +12,19 @@ public class OFLCmdResult extends ProtocalCmd {
         super();
         mCmdValue = cmd;
         mParaLen = (int)para[0];
-        if(Array.getLength(para) > mParaLen && mParaLen > 0) {
-            mCRC = ((para[mParaLen]<<8) & 0xFF00)| (para[mParaLen-1] &0xFF);
-            int crc = CRC16.calc(Arrays.copyOfRange(para, 1, mParaLen - 1));
+        if(Array.getLength(para) == mParaLen + 1 && mParaLen > 0) {
+            int index = para[mParaLen];
+            if(index > 0 && index < mParaLen ){
+                para[index] -= 1;
+            }
+            mCRC = ((para[mParaLen-1]<<8) & 0xFF00)| (para[mParaLen-2] &0xFF);
+            int crc = CRC16.calc(Arrays.copyOfRange(para, 1, mParaLen - 2));
             if(mCRC == crc) {
                 mSessionID = (int) (((para[2] << 8) & 0xFF00) | (para[1] & 0xFF));
                 mStatus = para[3];
             }
+        } else {
+            mValid = false;
         }
     }
 }

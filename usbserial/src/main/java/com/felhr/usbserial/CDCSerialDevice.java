@@ -76,12 +76,10 @@ public class CDCSerialDevice extends UsbSerialDevice
     }
 
     @Override
-    public boolean open()
-    {
+    public boolean open(){
         boolean ret = openCDC();
 
-        if(ret)
-        {
+        if(ret){
             // Initialize UsbRequest
             UsbRequest requestIN = new SafeUsbRequest();
             requestIN.initialize(connection, inEndpoint);
@@ -89,17 +87,17 @@ public class CDCSerialDevice extends UsbSerialDevice
             // Restart the working thread if it has been killed before and  get and claim interface
             restartBufferThread();
             restartWorkingThread();
-            restartWriteThread();
+            //restartWriteThread();
 
             // Pass references to the threads
+            setSyncParams(inEndpoint, outEndpoint);
             setThreadsParams(requestIN, outEndpoint);
 
             asyncMode = true;
             isOpen = true;
 
             return true;
-        }else
-        {
+        }else{
             isOpen = false;
             return false;
         }
@@ -111,7 +109,7 @@ public class CDCSerialDevice extends UsbSerialDevice
         setControlCommand(CDC_SET_CONTROL_LINE_STATE, CDC_CONTROL_LINE_OFF, null);
         killBufferThread();
         killWorkingThread();
-        killWriteThread();
+        //killWriteThread();
         connection.releaseInterface(mInterface);
         connection.close();
         isOpen = false;

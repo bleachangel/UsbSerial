@@ -45,7 +45,6 @@ public class SerialBuffer
         }
     }
 
-
     public byte[] getDataReceived()
     {
         synchronized(this)

@@ -29,6 +29,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Set;
 
+import com.felhr.madsessions.MadPlatformDevice;
 import com.felhr.madsessions.MadSession;
 import com.felhr.sensors.MadSensor;
 import com.felhr.sensors.MadSensorEvent;
@@ -77,17 +78,18 @@ public class MainActivity extends AppCompatActivity implements MadSensorEventLis
     private MadSensor mGyroSensor;
     private MadSensor mAlsSensor;
     private MadSensor mPsSensor;
+    private MadPlatformDevice mPlatformDevice;
     private boolean mEnable;
     private final ServiceConnection usbConnection = new ServiceConnection() {
         @Override
         public void onServiceConnected(ComponentName arg0, IBinder arg1) {
             mSensorService = ((MadSensorService.UsbBinder) arg1).getService();
             mSensorService.setHandler(mHandler);
-            //mSensorService.registerListener(instance, mMagSensor, 1000);
-            mSensorService.registerListener(instance, mAccSensor, 1000);
-            //mSensorService.registerListener(instance, mGyroSensor, 1000);
-            //mSensorService.registerListener(instance, mAlsSensor, 1000);
-            //mSensorService.registerListener(instance, mPsSensor, 1000);
+            mSensorService.registerListener(instance, mMagSensor, 5000);
+            mSensorService.registerListener(instance, mAccSensor, 5000);
+            mSensorService.registerListener(instance, mGyroSensor, 5000);
+            mSensorService.registerListener(instance, mAlsSensor, 5000);
+            mSensorService.registerListener(instance, mPsSensor, 5000);
         }
 
         @Override
@@ -117,55 +119,201 @@ public class MainActivity extends AppCompatActivity implements MadSensorEventLis
         txtview_ps_value = (TextView) findViewById(R.id.txtview_ps_value);
         txtview_err_rate = (TextView) findViewById(R.id.txtview_err_rate);
 
-        Button sendButton = (Button) findViewById(R.id.buttonSend);
-        sendButton.setOnClickListener(new View.OnClickListener() {
+        Button magEnableBtn = (Button) findViewById(R.id.magEnable);
+        magEnableBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                //boolean status = mAccSensor.isEnable();
-                mEnable = mAccSensor.isEnabled();
-                mEnable = !mEnable;
-                //mMagSensor.enable(mEnable);
-                if(!mAccSensor.enable(mEnable)){
-                    mEnable = !mEnable;
+                boolean status;
+
+                //当前感应器状态已经打开
+                if(mMagSensor.isEnabled()){
+                    status = true;
+                } else {
+                    status = false;
                 }
-                //mGyroSensor.enable(mEnable);
-                //mAlsSensor.enable(mEnable);
-                //mPsSensor.enable(mEnable);
+
+                status = !status;
+
+                mMagSensor.enable(status);
+
+                //当前感应器状态已经打开
+                if(mMagSensor.isEnabled()){
+                    magEnableBtn.setText(R.string.enable_mag);
+                } else {
+                    magEnableBtn.setText(R.string.disable_mag);
+                }
             }
         });
+
+        Button accEnableBtn = (Button) findViewById(R.id.accEnable);
+        accEnableBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                boolean status;
+
+                //当前感应器状态已经打开
+                if(mAccSensor.isEnabled()){
+                    status = true;
+                } else {
+                    status = false;
+                }
+
+                status = !status;
+
+                mAccSensor.enable(status);
+
+                //当前感应器状态已经打开
+                if(mAccSensor.isEnabled()){
+                    accEnableBtn.setText(R.string.enable_acc);
+                } else {
+                    accEnableBtn.setText(R.string.disable_acc);
+                }
+            }
+        });
+
+        Button gyroEnableBtn = (Button) findViewById(R.id.gyroEnable);
+        gyroEnableBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                boolean status;
+
+                //当前感应器状态已经打开
+                if(mGyroSensor.isEnabled()){
+                    status = true;
+                } else {
+                    status = false;
+                }
+
+                status = !status;
+
+                mGyroSensor.enable(status);
+
+                //当前感应器状态已经打开
+                if(mGyroSensor.isEnabled()){
+                    gyroEnableBtn.setText(R.string.enable_gyro);
+                } else {
+                    gyroEnableBtn.setText(R.string.disable_gyro);
+                }
+            }
+        });
+
+        Button alsEnableBtn = (Button) findViewById(R.id.alsEnable);
+        alsEnableBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                boolean status;
+
+                //当前感应器状态已经打开
+                if(mAlsSensor.isEnabled()){
+                    status = true;
+                } else {
+                    status = false;
+                }
+
+                status = !status;
+
+                mAlsSensor.enable(status);
+
+                //当前感应器状态已经打开
+                if(mAlsSensor.isEnabled()){
+                    alsEnableBtn.setText(R.string.enable_als);
+                } else {
+                    alsEnableBtn.setText(R.string.disable_als);
+                }
+            }
+        });
+
+        Button psEnableBtn = (Button) findViewById(R.id.psEnable);
+        psEnableBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                boolean status;
+
+                //当前感应器状态已经打开
+                if(mPsSensor.isEnabled()){
+                    status = true;
+                } else {
+                    status = false;
+                }
+
+                status = !status;
+
+                mPsSensor.enable(status);
+
+                //当前感应器状态已经打开
+                if(mPsSensor.isEnabled()){
+                    psEnableBtn.setText(R.string.enable_ps);
+                } else {
+                    psEnableBtn.setText(R.string.disable_ps);
+                }
+            }
+        });
+    }
+
+    public void onStart() {
+        super.onStart();
+
+        setFilters();  // Start listening notifications from MadSensorService
+        startService(MadSensorService.class, usbConnection, null); // Start MadSensorService(if it was not started before) and Bind it
+        mEnable = false;
+
+        mMagSensor = MadSensorManager.CreateSensor(MadSensorManager.MAD_SENSOR_TYPE_MAGNETIC);
+        mAccSensor = MadSensorManager.CreateSensor(MadSensorManager.MAD_SENSOR_TYPE_ACCELERATOR);
+        mGyroSensor = MadSensorManager.CreateSensor(MadSensorManager.MAD_SENSOR_TYPE_GYROSCOPE);
+        mAlsSensor = MadSensorManager.CreateSensor(MadSensorManager.MAD_SENSOR_TYPE_AMBIENT_LIGHT);
+        mPsSensor = MadSensorManager.CreateSensor(MadSensorManager.MAD_SENSOR_TYPE_PROXIMITY);
+
+        mPlatformDevice = new MadPlatformDevice();
+        mPlatformDevice.setup();
+        mPlatformDevice.reset(0);
+
+        mEnable = false;
+        mMagSensor.enable(mEnable);
+        mAccSensor.enable(mEnable);
+        mGyroSensor.enable(mEnable);
+        mAlsSensor.enable(mEnable);
+        mPsSensor.enable(mEnable);
     }
 
     @Override
     public void onResume() {
         super.onResume();
-        setFilters();  // Start listening notifications from MadSensorService
-        startService(MadSensorService.class, usbConnection, null); // Start MadSensorService(if it was not started before) and Bind it
-        mEnable = false;
-        //mMagSensor = MadSensorManager.CreateSensor(MadSensorManager.MAD_SENSOR_TYPE_MAGNETIC);
-        mAccSensor = MadSensorManager.CreateSensor(MadSensorManager.MAD_SENSOR_TYPE_ACCELERATOR);
-        //mGyroSensor = MadSensorManager.CreateSensor(MadSensorManager.MAD_SENSOR_TYPE_GYROSCOPE);
-        //mAlsSensor = MadSensorManager.CreateSensor(MadSensorManager.MAD_SENSOR_TYPE_AMBIENT_LIGHT);
-        //mPsSensor = MadSensorManager.CreateSensor(MadSensorManager.MAD_SENSOR_TYPE_PROXIMITY);
     }
 
     @Override
     public void onPause() {
         super.onPause();
-        //MadSensorManager.DestorySensor(mMagSensor);
+    }
+
+    public void onStop(){
+        super.onStop();
+
         mEnable = false;
+        mMagSensor.enable(mEnable);
+        mAccSensor.enable(mEnable);
+        mGyroSensor.enable(mEnable);
+        mAlsSensor.enable(mEnable);
+        mPsSensor.enable(mEnable);
+
+        MadSensorManager.DestorySensor(mMagSensor);
         MadSensorManager.DestorySensor(mAccSensor);
-        //MadSensorManager.DestorySensor(mGyroSensor);
-        //MadSensorManager.DestorySensor(mAlsSensor);
-        //MadSensorManager.DestorySensor(mPsSensor);
-        //mMagSensor = null;
+        MadSensorManager.DestorySensor(mGyroSensor);
+        MadSensorManager.DestorySensor(mAlsSensor);
+        MadSensorManager.DestorySensor(mPsSensor);
+
+        mMagSensor = null;
         mAccSensor = null;
-        //mGyroSensor = null;
-        //mAlsSensor = null;
-        //mPsSensor = null;
+        mGyroSensor = null;
+        mAlsSensor = null;
+        mPsSensor = null;
+        mPlatformDevice = null;
         unregisterReceiver(mUsbReceiver);
         unbindService(usbConnection);
     }
-
+    @Override
+    public void onDestroy(){
+        super.onDestroy();
+    }
     private void startService(Class<?> service, ServiceConnection serviceConnection, Bundle extras) {
         if (!MadSensorService.SERVICE_CONNECTED) {
             Intent startService = new Intent(this, service);
@@ -227,7 +375,7 @@ public class MainActivity extends AppCompatActivity implements MadSensorEventLis
         if(mSensorService!= null) {
             Message ratemsg = mHandler.obtainMessage();
             ratemsg.what = MadSensorService.MESSAGE_ERR_RATE;
-            String rateString = "send : " + mSensorService.getSendCmdCount() + ",recv : " + mSensorService.getRecvCmdCount();
+            String rateString = "send cmd: " + mSensorService.getSendCmdCount() + ",recv cmd: " + mSensorService.getRecvCmdCount() + " , recv byte count / err count: "+ mSensorService.getRecvByteCount() + " / " + mSensorService.getRecvErrCount();
             ratemsg.obj = rateString;
             ratemsg.sendToTarget();
         }

@@ -23,9 +23,9 @@ public class LTR579Ps extends MadSensor {
     public boolean enable(boolean enable){
         boolean ret = false;
 
-        mEnable = enable;
         if(LTR579.getInstance().enablePs(mSession, enable)){
             ret = true;
+            mEnable = enable;
         }
         return ret;
     }
@@ -47,7 +47,7 @@ public class LTR579Ps extends MadSensor {
 
     public MadSensorEvent read(){
         byte[] status = LTR579.getInstance().readPs(mSession);
-        if(status == null || status.length != 2){
+        if(status == null || status.length != LTR579.PS_DATA_SIZE){
             return null;
         }
 

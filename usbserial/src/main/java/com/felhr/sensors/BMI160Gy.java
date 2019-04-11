@@ -28,10 +28,12 @@ public class BMI160Gy extends MadSensor {
 
     public boolean enable(boolean enable){
         boolean ret = false;
-        mEnable = enable;
+
         if(BMI160.getInstance().enableGy(mSession, enable)){
             ret = true;
+            mEnable = enable;
         }
+
         return ret;
     }
 

@@ -56,7 +56,6 @@ public class MadSensorService extends Service {
     public static final int MESSAGE_PS = 8;
     public static final int MESSAGE_ERR_RATE = 9;
     private static final String ACTION_USB_PERMISSION = "com.android.example.USB_PERMISSION";
-    private static final int BAUD_RATE = 921600; // BaudRate. Change this value if you need
     public static boolean SERVICE_CONNECTED = false;
 
     private IBinder binder = new UsbBinder();
@@ -71,60 +70,37 @@ public class MadSensorService extends Service {
     //private MadSession mSession = null;
     private boolean serialPortConnected;
 
-    public class AcceleratorData extends AbstractSensorData {
-        AcceleratorData(int x, int y, int z){
-            super(x, y, z);
-        }
-    }
-
-    public class GyroscopeData extends AbstractSensorData {
-        GyroscopeData(int x, int y, int z){
-            super(x, y, z);
-        }
-    }
-
-    public class MagneticData extends AbstractSensorData {
-        MagneticData(int x, int y, int z){
-            super(x, y, z);
-        }
-    }
-
-    public class AlsData extends AbstractSensorData {
-        AlsData(int x, int y, int z){
-            super(x, y, z);
-        }
-    }
-
-    public class PsData extends AbstractSensorData {
-        PsData(int x, int y, int z){
-            super(x, y, z);
-        }
-    }
-
     private HashMap<MadSensor, MadSensorEventListener> mSensorListeners = new HashMap<MadSensor, MadSensorEventListener>();
     public boolean registerListener(MadSensorEventListener listener, MadSensor sensor, int delayUs){
-        mSensorListeners.put(sensor, listener);
+        synchronized (mSensorListeners) {
+            sensor.mTimeOut = delayUs;
+            mSensorListeners.put(sensor, listener);
+        }
         return true;
     }
 
     public boolean unregisterListener(MadSensorEventListener listener){
-        Iterator<Map.Entry<MadSensor, MadSensorEventListener>> keys = mSensorListeners.entrySet().iterator();
-        while(keys.hasNext()){
-            Map.Entry<MadSensor, MadSensorEventListener> key = keys.next();
-            if(key.getValue().equals(listener)){
-                keys.remove();
+        synchronized (mSensorListeners) {
+            Iterator<Map.Entry<MadSensor, MadSensorEventListener>> keys = mSensorListeners.entrySet().iterator();
+            while (keys.hasNext()) {
+                Map.Entry<MadSensor, MadSensorEventListener> key = keys.next();
+                if (key.getValue().equals(listener)) {
+                    keys.remove();
+                }
             }
         }
-
         return true;
     }
 
     public void dispatchSensorEvent(MadSensor sensor, MadSensorEvent event){
-        if(mSensorListeners == null || sensor == null || event == null){
-            return ;
+        if (mSensorListeners == null || sensor == null || event == null) {
+            return;
         }
-        MadSensorEventListener listener = mSensorListeners.get(sensor);
-        listener.onMadSensorChanged(event);
+
+        synchronized (mSensorListeners) {
+            MadSensorEventListener listener = mSensorListeners.get(sensor);
+            listener.onMadSensorChanged(event);
+        }
     }
 
     /*
@@ -197,7 +173,9 @@ public class MadSensorService extends Service {
     protected class SensorServiceThread extends Thread {
         private volatile boolean keep = true;
 
-        public SensorServiceThread() {}
+        public SensorServiceThread() {
+            super("SensorServiceThread");
+        }
 
         void stopThread() {
             keep = false;
@@ -206,23 +184,19 @@ public class MadSensorService extends Service {
         @Override
         public void run() {
             while (keep) {
-                int sensorSize = MadSensorManager.mSensorList.size();
+                synchronized (MadSensorManager.mSensorList) {
+                    int sensorSize = MadSensorManager.mSensorList.size();
 
-                for (int i = 0; i < sensorSize; i++) {
-                    MadSensor sensor = MadSensorManager.mSensorList.get(i);
-                    if (sensor.isEnabled()) {
-                        if(!sensor.isInited()){
-                            sensor.init();
+                    for (int i = 0; i < sensorSize; i++) {
+                        MadSensor sensor = MadSensorManager.mSensorList.get(i);
+                        if (sensor.isEnabled()) {
+                            if (!sensor.isInited()) {
+                                sensor.init();
+                            }
+
+                            dispatchSensorEvent(sensor, sensor.read());
                         }
-
-                        dispatchSensorEvent(sensor, sensor.read());
                     }
-                }
-
-                try {
-                    sleep(10);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
                 }
             }
         }
@@ -348,6 +322,14 @@ public class MadSensorService extends Service {
 
     public long getRecvCmdCount(){
         return MadSessionManager.getInstance().getRecvCmdCount();
+    }
+
+    public long getRecvByteCount(){
+        return MadSessionManager.getInstance().getRecvByteCount();
+    }
+
+    public long getRecvErrCount(){
+        return MadSessionManager.getInstance().getRecvErrCount();
     }
 }
 

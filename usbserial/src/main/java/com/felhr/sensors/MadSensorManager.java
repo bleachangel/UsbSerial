@@ -33,31 +33,41 @@ public class MadSensorManager {
                 break;
         }
 
-        mSensorList.add(sensor);
+        synchronized (mSensorList) {
+            mSensorList.add(sensor);
+        }
         return  sensor;
     }
 
     public static boolean init(){
         boolean ret = true;
-        int size = mSensorList.size();
-        for(int i = 0; i < size; i++){
-            MadSensor sensor = mSensorList.get(i);
-            sensor.init();
+        synchronized (mSensorList) {
+            int size = mSensorList.size();
+            for (int i = 0; i < size; i++) {
+                MadSensor sensor = mSensorList.get(i);
+                sensor.init();
+            }
         }
         return ret;
     }
 
     public static boolean deinit(){
         boolean ret = true;
-        int size = mSensorList.size();
-        for(int i = 0; i < size; i++){
-            MadSensor sensor = mSensorList.get(i);
-            sensor.enable(false);
+        synchronized (mSensorList) {
+            int size = mSensorList.size();
+            for (int i = 0; i < size; i++) {
+                MadSensor sensor = mSensorList.get(i);
+                sensor.enable(false);
+            }
         }
         return ret;
     }
 
     public static boolean DestorySensor(MadSensor sensor){
-        return mSensorList.remove(sensor);
+        boolean ret;
+        synchronized (mSensorList){
+            ret = mSensorList.remove(sensor);
+        }
+        return ret;
     }
 }

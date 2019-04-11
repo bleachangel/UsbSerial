@@ -1,46 +1,57 @@
 package com.felhr.madsessions;
 
 public class MadPlatformDevice {
-    public MadSession mSession = new MadSession();
+    public static final int DEFAULT_TIME_OUT = 100;
+    public MadSession mSession = null;
     public MadPlatformDevice(){
+        mSession = new MadSession();
     }
+
+    public int setup(){
+        return mSession.setup(DEFAULT_TIME_OUT);
+    }
+
+    public int reset(int deviceID){
+        return mSession.reset(deviceID, DEFAULT_TIME_OUT);
+    }
+
     public int setVol(byte vol){
-        long timeOut = 50;
-        return mSession.setVol(vol, timeOut);
+        return mSession.setVol(vol, DEFAULT_TIME_OUT);
     }
 
     public int getVol(){
-        long timeOut = 50;
-        return mSession.getVol(timeOut);
+        return mSession.getVol(DEFAULT_TIME_OUT);
     }
 
     public int setLcdBrightness(byte brightness){
-        long timeOut = 50;
-        return mSession.setLCDBrightness(brightness, timeOut);
+        return mSession.setLCDBrightness(brightness, DEFAULT_TIME_OUT);
     }
 
     public int getLcdBrightness(){
-        long timeOut = 50;
-        return mSession.getLCDBrightness(timeOut);
+        return mSession.getLCDBrightness(DEFAULT_TIME_OUT);
     }
 
     public int openCamera(byte no){
-        long timeOut = 50;
-        return mSession.openCamera(no, timeOut);
+        return mSession.openCamera(no, DEFAULT_TIME_OUT);
     }
 
     public int closeCamera(byte no){
-        long timeOut = 50;
-        return mSession.closeCamera(no, timeOut);
+        return mSession.closeCamera(no, DEFAULT_TIME_OUT);
     }
 
     public int openFlashLight(byte no){
-        long timeOut = 50;
-        return mSession.openFlashLight(no, timeOut);
+        return mSession.openFlashLight(no, DEFAULT_TIME_OUT);
     }
 
     public int closeFlashLight(byte no){
-        long timeOut = 50;
-        return mSession.closeFlashLight(no, timeOut);
+        return mSession.closeFlashLight(no, DEFAULT_TIME_OUT);
+    }
+
+    public int setMicVol(byte vol){
+        return mSession.setMicVol(vol, DEFAULT_TIME_OUT);
+    }
+
+    public int getMicVol(){
+        return mSession.getMicVol(DEFAULT_TIME_OUT);
     }
 }

@@ -40,9 +40,10 @@ public class BMI160A extends MadSensor {
 
     public boolean enable(boolean enable){
         boolean ret = false;
-        mEnable = enable;
+
         if(BMI160.getInstance().enableAcc(mSession, enable)){
             ret = true;
+            mEnable = enable;
         }
         return ret;
     }

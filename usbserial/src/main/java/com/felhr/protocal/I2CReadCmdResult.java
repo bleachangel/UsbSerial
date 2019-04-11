@@ -19,9 +19,13 @@ public class I2CReadCmdResult extends ProtocalCmd {
         mCmdValue = cmd;
         mParaLen = (int)para[0];
         mDataSize = 0;
-        if(Array.getLength(para) > mParaLen && mParaLen > 0) {
-            mCRC = ((para[mParaLen]<<8) & 0xFF00)| (para[mParaLen-1] &0xFF);
-            int crc = CRC16.calc(Arrays.copyOfRange(para, 1, mParaLen - 1));
+        if(Array.getLength(para) == mParaLen + 1 && mParaLen > 0) {
+            int index = para[mParaLen];
+            if(index > 0 && index < mParaLen ){
+                para[index] -= 1;
+            }
+            mCRC = ((para[mParaLen-1]<<8) & 0xFF00)| (para[mParaLen-2] &0xFF);
+            int crc = CRC16.calc(Arrays.copyOfRange(para, 1, mParaLen - 2));
             if(mCRC == crc) {
                 mSessionID = (int) (((para[2] << 8) & 0xFF00) | (para[1] & 0xFF));
                 //I2C read ret cmd para: len(1)+session_id(2)+channel&addr bit(1)+slaveaddr(1)+regaddr(2)+datasize(1)+data(<=6)+crc(2)
@@ -36,6 +40,8 @@ public class I2CReadCmdResult extends ProtocalCmd {
                     System.arraycopy(para, 8, mReadData, 0, mDataSize);
                 }
             }
+        } else {
+            mValid = false;
         }
     }
 }

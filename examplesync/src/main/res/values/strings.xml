@@ -3,5 +3,15 @@
     <string name="hello_world">Hello world!</string>
     <string name="action_settings">Settings</string>
     <string name="serial_port">Synchronous Serial Port</string>
-    <string name="btn_send">Send</string>
+    <string name="btn_send">SEND</string>
+    <string name="enable_mag">m-enable</string>
+    <string name="disable_mag">m-disable</string>
+    <string name="enable_acc">a-enable</string>
+    <string name="disable_acc">a-disable</string>
+    <string name="enable_gyro">g-enable</string>
+    <string name="disable_gyro">g-disable</string>
+    <string name="enable_als">als-enable</string>
+    <string name="disable_als">als-disable</string>
+    <string name="enable_ps">ps-enable</string>
+    <string name="disable_ps">ps-disable</string>
 </resources>

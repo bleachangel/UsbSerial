@@ -6,6 +6,7 @@ public class CmdResultFactory {
     public static final String CMD_RESET_TAG    = ":RST";
     public static final String CMD_I2C_READ_TAG   = ":I2R";
     public static final String CMD_I2C_WRITE_TAG   = ":I2W";
+    public static final String CMD_AUTO_REPORT_TAG   = ":ATR";
     public static final String CMD_GPIO_READ_TAG   = ":IOR";
     public static final String CMD_GPIO_WRITE_TAG   = ":IOW";
     public static final String CMD_SET_VOL_TAG   = ":SVL";
@@ -17,6 +18,8 @@ public class CmdResultFactory {
     public static final String CMD_OPEN_FLASH_LIGHT_TAG   = ":OFL";
     public static final String CMD_CLOSE_FLASH_LIGHT_TAG   = ":CFL";
     public static final String CMD_I2C_CONFIG_TAG   = ":I2C";
+    public static final String CMD_SET_MIC_VOL_TAG   = ":SMV";
+    public static final String CMD_GET_MIC_VOL_TAG   = ":GMV";
     public static final String CMD_END_TAG   = ":END";
 
     public static final byte CMD_START_TAG = ':';
@@ -38,7 +41,10 @@ public class CmdResultFactory {
     public static final int CMD_OPEN_FLASH_LIGHT_VALUE   = 14;
     public static final int CMD_CLOSE_FLASH_LIGHT_VALUE   = 15;
     public static final int CMD_I2C_CONFIG_VALUE   = 16;
-    public static final int CMD_END_VALUE   = 17;
+    public static final int CMD_SET_MIC_VOL_VALUE   = 17;
+    public static final int CMD_GET_MIC_VOL_VALUE   = 18;
+    public static final int CMD_AUTO_REPORT_VALUE   = 19;
+    public static final int CMD_END_VALUE   = 20;
     public static final int CMD_INVALID_VALUE    = -1;
 
     public static byte[] convert(byte[] chars){
@@ -81,42 +87,48 @@ public class CmdResultFactory {
             return null;
         }
 
-        byte[] data = convert(para);
-        if(data.length <= 0){
+        //byte[] data = convert(para);
+        if(para.length <= 0){
             return null;
         }
 
         if(cmdType.equalsIgnoreCase(CMD_SETUP_TAG)){
-            return new SetupCmdResult(CMD_SETUP_VALUE, data);
+            return new SetupCmdResult(CMD_SETUP_VALUE, para);
         } else if(cmdType.equalsIgnoreCase(CMD_TEST_TAG)){
         } else if(cmdType.equalsIgnoreCase(CMD_RESET_TAG)){
-            return new ResetCmdResult(CMD_RESET_VALUE, data);
+            return new ResetCmdResult(CMD_RESET_VALUE, para);
         } else if(cmdType.equalsIgnoreCase(CMD_I2C_READ_TAG)){
-            return  new I2CReadCmdResult(CMD_I2C_READ_VALUE, data);
+            return  new I2CReadCmdResult(CMD_I2C_READ_VALUE, para);
+        } else if(cmdType.equalsIgnoreCase(CMD_AUTO_REPORT_TAG)){
+            return  new ATRCmdResult(CMD_AUTO_REPORT_VALUE, para);
         } else if(cmdType.equalsIgnoreCase(CMD_I2C_WRITE_TAG)){
-            return  new I2CWriteCmdResult(CMD_I2C_WRITE_VALUE, data);
+            return  new I2CWriteCmdResult(CMD_I2C_WRITE_VALUE, para);
         } else if(cmdType.equalsIgnoreCase(CMD_GPIO_READ_TAG)){
-            return new IOReadCmdResult(CMD_GPIO_READ_VALUE, data);
+            return new IOReadCmdResult(CMD_GPIO_READ_VALUE, para);
         } else if(cmdType.equalsIgnoreCase(CMD_GPIO_WRITE_TAG)){
-            return  new IOWriteCmdResult(CMD_GPIO_WRITE_VALUE, data);
+            return  new IOWriteCmdResult(CMD_GPIO_WRITE_VALUE, para);
         } else if(cmdType.equalsIgnoreCase(CMD_SET_VOL_TAG)){
-            return  new SVLCmdResult(CMD_SET_VOL_VALUE, data);
+            return  new SVLCmdResult(CMD_SET_VOL_VALUE, para);
         } else if(cmdType.equalsIgnoreCase(CMD_GET_VOL_TAG)){
-            return  new GVLCmdResult(CMD_GET_VOL_VALUE, data);
+            return  new GVLCmdResult(CMD_GET_VOL_VALUE, para);
         } else if(cmdType.equalsIgnoreCase(CMD_SET_LCD_BRIGHT_TAG)){
-            return  new SLBCmdResult(CMD_SET_LCD_BRIGHT_VALUE, data);
+            return  new SLBCmdResult(CMD_SET_LCD_BRIGHT_VALUE, para);
         } else if(cmdType.equalsIgnoreCase(CMD_GET_LCD_BRIGHT_TAG)){
-            return  new GLBCmdResult(CMD_GET_LCD_BRIGHT_VALUE, data);
+            return  new GLBCmdResult(CMD_GET_LCD_BRIGHT_VALUE, para);
         } else if(cmdType.equalsIgnoreCase(CMD_OPEN_CAMERA_TAG)){
-            return  new OPCCmdResult(CMD_OPEN_CAMERA_VALUE, data);
+            return  new OPCCmdResult(CMD_OPEN_CAMERA_VALUE, para);
         } else if(cmdType.equalsIgnoreCase(CMD_CLOSE_CAMERA_TAG)){
-            return  new CLCCmdResult(CMD_CLOSE_CAMERA_VALUE, data);
+            return  new CLCCmdResult(CMD_CLOSE_CAMERA_VALUE, para);
         } else if(cmdType.equalsIgnoreCase(CMD_OPEN_FLASH_LIGHT_TAG)){
-            return  new OFLCmdResult(CMD_OPEN_FLASH_LIGHT_VALUE, data);
+            return  new OFLCmdResult(CMD_OPEN_FLASH_LIGHT_VALUE, para);
         } else if(cmdType.equalsIgnoreCase(CMD_CLOSE_FLASH_LIGHT_TAG)){
-            return  new CFLCmdResult(CMD_CLOSE_FLASH_LIGHT_VALUE, data);
+            return  new CFLCmdResult(CMD_CLOSE_FLASH_LIGHT_VALUE, para);
         } else if(cmdType.equalsIgnoreCase(CMD_I2C_CONFIG_TAG)){
-            return  new I2CConfigCmdResult(CMD_I2C_CONFIG_VALUE, data);
+            return  new I2CConfigCmdResult(CMD_I2C_CONFIG_VALUE, para);
+        } else if(cmdType.equalsIgnoreCase(CMD_SET_MIC_VOL_TAG)){
+            return  new SVLCmdResult(CMD_SET_MIC_VOL_VALUE, para);
+        } else if(cmdType.equalsIgnoreCase(CMD_GET_MIC_VOL_TAG)){
+            return  new GVLCmdResult(CMD_GET_MIC_VOL_VALUE, para);
         }
 
         return null;

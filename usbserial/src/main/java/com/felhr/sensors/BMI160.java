@@ -136,15 +136,6 @@ public class BMI160 {
         return ret;
     }
 
-    public boolean setAccPower(MadSession session, byte mode){
-        byte[] state = new byte[1];
-        int size;
-
-        state[0] = (byte)mode;
-        size = session.writeI2C(mChannel, mSlaveAddr, BMI160_CMD_COMMANDS_ADDR, MadSession.I2C_REGISTER_ADDR_MODE_8, state, MadSession.RESULT_TIME_OUT);
-        return true;
-    }
-
     public int getAccPower(MadSession session){
         byte[] state;
         int size = 1;
@@ -157,18 +148,28 @@ public class BMI160 {
     }
 
     public boolean enableAcc(MadSession session, boolean enable){
-        byte mode = CMD_PMU_ACC_SUSPEND;
+        byte pmu = CMD_PMU_ACC_SUSPEND;
+        byte mode = 0;
         boolean ret = false;
-        mEnableAcc = enable;
-        if(mEnableAcc){
-            mode = CMD_PMU_ACC_NORMAL;
-        } else {
-            session.configI2C(mChannel, mSlaveAddr, BMI160_USER_ACC_DATA_ADDR, BMI160_CMD_COMMANDS_ADDR, CMD_PMU_ACC_NORMAL,MadSession.I2C_REGISTER_ADDR_MODE_8, (byte)0, (byte)6, MadSession.RESULT_TIME_OUT);
+        byte repeatReadSize = 6;
+        byte[] state = new byte[1];
+        int size;
+
+        if(enable){
+            pmu = CMD_PMU_ACC_NORMAL;
+            mode = 1;
         }
 
-        if(setAccPower(session, mode)){
+        state[0] = (byte)pmu;
+        size = session.writeI2C(mChannel, mSlaveAddr, BMI160_CMD_COMMANDS_ADDR, MadSession.I2C_REGISTER_ADDR_MODE_8, state, MadSession.RESULT_TIME_OUT);
+        if(size == 1){
             ret = true;
+            mEnableAcc = enable;
+            session.configI2C(mChannel, mSlaveAddr, BMI160_USER_ACC_DATA_ADDR,
+                    BMI160_CMD_COMMANDS_ADDR, CMD_PMU_ACC_NORMAL, 0, MadSession.I2C_REGISTER_ADDR_MODE_8,
+                    (byte) mode, (byte) repeatReadSize, MadSession.RESULT_TIME_OUT);
         }
+
         return ret;
     }
 
@@ -196,19 +197,6 @@ public class BMI160 {
         return ret;
     }
 
-    public boolean setGyPower(MadSession session, byte mode){
-        byte[] state = new byte[1];
-        int size;
-        boolean ret = false;
-
-        state[0] = (byte)mode;
-        size = session.writeI2C(mChannel, mSlaveAddr, BMI160_CMD_COMMANDS_ADDR, MadSession.I2C_REGISTER_ADDR_MODE_8, state, MadSession.RESULT_TIME_OUT);
-        if(size == 1){
-            ret = true;
-        }
-        return ret;
-    }
-
     public int getGyPower(MadSession session){
         byte[] state;
         int size = 1;
@@ -221,18 +209,26 @@ public class BMI160 {
     }
 
     public boolean enableGy(MadSession session, boolean enable){
-        byte mode = CMD_PMU_GYRO_SUSPEND;
+        byte pmu = CMD_PMU_GYRO_SUSPEND;
+        byte mode = 0;
         boolean ret = false;
+        byte repeatReadSize = 6;
+        byte[] state = new byte[1];
+        int size;
 
-        mEnableGy = enable;
-        if(mEnableGy){
-            mode = CMD_PMU_GYRO_NORMAL;
-        } else {
-            session.configI2C(mChannel, mSlaveAddr, BMI160_USER_GYR_DATA_ADDR, BMI160_CMD_COMMANDS_ADDR, CMD_PMU_GYRO_NORMAL,MadSession.I2C_REGISTER_ADDR_MODE_8, (byte)0, (byte)6, MadSession.RESULT_TIME_OUT);
+        if(enable){
+            pmu = CMD_PMU_GYRO_NORMAL;
+            mode = 1;
         }
 
-        if(setGyPower(session, mode)){
+        state[0] = (byte)pmu;
+        size = session.writeI2C(mChannel, mSlaveAddr, BMI160_CMD_COMMANDS_ADDR, MadSession.I2C_REGISTER_ADDR_MODE_8, state, MadSession.RESULT_TIME_OUT);
+        if(size == 1){
             ret = true;
+            mEnableGy = enable;
+            session.configI2C(mChannel, mSlaveAddr, BMI160_USER_GYR_DATA_ADDR,
+                    BMI160_CMD_COMMANDS_ADDR, CMD_PMU_GYRO_NORMAL, 0, MadSession.I2C_REGISTER_ADDR_MODE_8,
+                    (byte)mode, (byte)repeatReadSize, MadSession.RESULT_TIME_OUT);
         }
 
         return ret;
@@ -249,12 +245,9 @@ public class BMI160 {
             mInited = false;
             return  false;
         } else if(icID.length == 1 && (icID[0] == (byte)0xD0 || icID[0] == (byte)0xD1 || icID[0] == (byte)0xD3)) {
-            if(0 != session.configI2C(mChannel, mSlaveAddr, BMI160_USER_ACC_DATA_ADDR, BMI160_CMD_COMMANDS_ADDR, CMD_PMU_ACC_NORMAL,MadSession.I2C_REGISTER_ADDR_MODE_8, (byte)1, (byte)6, MadSession.RESULT_TIME_OUT)){
-                return false;
-            }
 
             mInited = true;
-            //session.configI2C(mChannel, mSlaveAddr, BMI160_USER_GYR_DATA_ADDR, MadSession.I2C_REGISTER_ADDR_MODE_8, (byte)1, (byte)6, MadSession.RESULT_TIME_OUT);
+
             setAccConfig(session, mAccODR);
             setAccRange(session, mAccRange);
             setIntEnable(session, false);
@@ -274,26 +267,22 @@ public class BMI160 {
 
     public byte[] readAcc(MadSession session){
         byte[] status = null;
-        //if(enableAcc(session, true)) {
-            int size = 6;
-            status = session.readI2CAsync(mChannel, mSlaveAddr, BMI160_USER_ACC_DATA_ADDR, MadSession.I2C_REGISTER_ADDR_MODE_8, size, MadSession.RESULT_TIME_OUT);
-            if (status == null || status.length != size) {
-                return null;
-            }
-        //}
+        int size = 6;
+        status = session.readI2CAsync(mChannel, mSlaveAddr, BMI160_USER_ACC_DATA_ADDR, MadSession.I2C_REGISTER_ADDR_MODE_8, size, MadSession.RESULT_TIME_OUT);
+        if (status == null || status.length != size) {
+            return null;
+        }
 
         return status;
     }
 
     public byte[] readGy(MadSession session){
         byte[] status = null;
-        //if(enableGy(session, true)) {
-            int size = 6;
-            status = session.readI2CAsync(mChannel, mSlaveAddr, BMI160_USER_GYR_DATA_ADDR, MadSession.I2C_REGISTER_ADDR_MODE_8, size, MadSession.RESULT_TIME_OUT);
-            if (status == null || status.length != size) {
-                return null;
-            }
-        //}
+        int size = 6;
+        status = session.readI2CAsync(mChannel, mSlaveAddr, BMI160_USER_GYR_DATA_ADDR, MadSession.I2C_REGISTER_ADDR_MODE_8, size, MadSession.RESULT_TIME_OUT);
+        if (status == null || status.length != size) {
+            return null;
+        }
 
         return status;
     }

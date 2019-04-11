@@ -8,12 +8,14 @@ public abstract class MadSensor {
     public byte mSlaveAddr;
     public boolean mEnable;
     public boolean mInited;
+    public long mTimeOut; //unit is us.
     public MadSession mSession = new MadSession();
 
     public MadSensor(){
         mChannel = 0;
         mSlaveAddr = 0;
         mEnable = false;
+        mTimeOut = 0;
     }
 
     public boolean isEnabled(){
