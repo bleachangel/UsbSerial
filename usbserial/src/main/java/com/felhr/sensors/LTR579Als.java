@@ -59,11 +59,7 @@ public class LTR579Als extends MadSensor {
         int[] als_value = {0, 10, 25, 40, 60, 80, 100, 132, 210, 304, 410, 502, 636, 750, 880, 1004, 2003, 3006, 5006, 8004, 10000, 12000, 16000, 20000, 20000, 20000, 20000, 20000, 20000, 20000, 20000};
 
         int als = 0;
-        if(status.length == 2){
-            als = (int)((status[0]&0xFF)|((status[1]<<8)&0xFF00));
-        } else if (status.length == 3){
-            als = (int)((status[0]&0xFF)|((status[1]<<8)&0xFF00) | ((status[2]<<16)&0xFF0000));
-        }
+        als = (int)((status[0]&0xFF)|((status[1]<<8)&0xFF00) | ((status[2]<<16)&0xFF0000));
 
         int level_length = als_level.length;
         int value = als_value[0];

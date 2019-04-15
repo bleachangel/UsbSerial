@@ -80,6 +80,12 @@ public class MainActivity extends AppCompatActivity implements MadSensorEventLis
     private MadSensor mPsSensor;
     private MadPlatformDevice mPlatformDevice;
     private boolean mEnable;
+    private long mPrevTime;
+    private long mPrevCount;
+    private long mMinRate;
+    private long mMaxRate;
+    private long mSeconds;
+
     private final ServiceConnection usbConnection = new ServiceConnection() {
         @Override
         public void onServiceConnected(ComponentName arg0, IBinder arg1) {
@@ -256,7 +262,10 @@ public class MainActivity extends AppCompatActivity implements MadSensorEventLis
         setFilters();  // Start listening notifications from MadSensorService
         startService(MadSensorService.class, usbConnection, null); // Start MadSensorService(if it was not started before) and Bind it
         mEnable = false;
-
+        mPrevTime = 0;
+        mPrevCount = 0;
+        mMinRate = Long.MAX_VALUE;
+        mMaxRate = 0;
         mMagSensor = MadSensorManager.CreateSensor(MadSensorManager.MAD_SENSOR_TYPE_MAGNETIC);
         mAccSensor = MadSensorManager.CreateSensor(MadSensorManager.MAD_SENSOR_TYPE_ACCELERATOR);
         mGyroSensor = MadSensorManager.CreateSensor(MadSensorManager.MAD_SENSOR_TYPE_GYROSCOPE);
@@ -375,7 +384,39 @@ public class MainActivity extends AppCompatActivity implements MadSensorEventLis
         if(mSensorService!= null) {
             Message ratemsg = mHandler.obtainMessage();
             ratemsg.what = MadSensorService.MESSAGE_ERR_RATE;
-            String rateString = "send cmd: " + mSensorService.getSendCmdCount() + ",recv cmd: " + mSensorService.getRecvCmdCount() + " , recv byte count / err count: "+ mSensorService.getRecvByteCount() + " / " + mSensorService.getRecvErrCount();
+
+            long current = System.currentTimeMillis();
+            if(mPrevTime == 0){
+                mPrevTime = current;
+            }
+
+            long interval = current - mPrevTime;
+            long curCount = mSensorService.getRecvCmdCount();
+            long interCount = curCount - mPrevCount;
+            if(interval >= 1000){
+                mSeconds ++;
+                if(mSeconds >= 30){
+                    mSeconds = 0;
+
+                    //每30秒重新计算最大最小值
+                    mMinRate = Long.MAX_VALUE;
+                    mMaxRate = 0;
+                }
+
+                interCount = interCount * 1000 / interval;
+                if(mMinRate > interCount){
+                    mMinRate = interCount;
+                }
+
+                if(mMaxRate < interCount){
+                    mMaxRate = interCount;
+                }
+
+                mPrevCount = curCount;
+                mPrevTime = current;
+            }
+
+            String rateString = "min rate : "+mMinRate+", max rate : "+ mMaxRate + ", send cmd: " + mSensorService.getSendCmdCount() + ",recv cmd: " + curCount + " , recv byte count / err count: "+ mSensorService.getRecvByteCount() + " / " + mSensorService.getRecvErrCount();
             ratemsg.obj = rateString;
             ratemsg.sendToTarget();
         }

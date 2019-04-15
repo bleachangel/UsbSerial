@@ -74,7 +74,7 @@ public class Akm09911 extends MadSensor {
             mEnable = enable;
 
             mSession.configI2C(mChannel, mSlaveAddr, ST1_ADDR,
-                    CNTL2_ADDR, SINGLE_MEAS_MODE_VALUE, (int)5,MadSession.I2C_REGISTER_ADDR_MODE_8,
+                    CNTL2_ADDR, SINGLE_MEAS_MODE_VALUE, (int)10,MadSession.I2C_REGISTER_ADDR_MODE_8,
                     (byte)mode, (byte)repeatReadSize, MadSession.RESULT_TIME_OUT);
         }
 

@@ -14,7 +14,7 @@ public class LTR579 {
     public static final byte ALS_DATA_START_ADDR = (byte)0xD;
 
     public static final int PS_DATA_SIZE = 2;
-    public static final int ALS_DATA_SIZE = 2;
+    public static final int ALS_DATA_SIZE = 3;
 
     public static final byte PART_NUMBER_ID = (byte)0xB1;
     public static final byte PS_LED_VALUE = (byte)0x36;// 60khz ,100ma
@@ -107,7 +107,7 @@ public class LTR579 {
             ret = true;
             mEnablePs = enable;
             session.configI2C(mChannel, mSlaveAddr, PS_DATA_START_ADDR,
-                    MAIN_CTRL_ADDR, pmu, 2, MadSession.I2C_REGISTER_ADDR_MODE_8,
+                    MAIN_CTRL_ADDR, pmu, 25, MadSession.I2C_REGISTER_ADDR_MODE_8,
                     (byte)mode, (byte)PS_DATA_SIZE, MadSession.RESULT_TIME_OUT);
         }
 
