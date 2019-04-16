@@ -62,11 +62,11 @@ public class BMI160Gy extends MadSensor {
 
         int sensitivity = BMI160.getInstance().getGySensitivity();
         //x
-        event.values[0] = (float)((short)((status[0]&0xFF)|((status[1]<<8)&0xFF00)))/sensitivity/DEGREE_TO_RAD;
+        event.values[0] = (float)((short)((status[4]&0xFF)|((status[5]<<8)&0xFF00)))/sensitivity/DEGREE_TO_RAD;
         //y
         event.values[1] = (float)((short)((status[2]&0xFF)|((status[3]<<8)&0xFF00)))/sensitivity/DEGREE_TO_RAD;
         //z
-        event.values[2] = (float)((short)((status[4]&0xFF)|((status[5]<<8)&0xFF00)))/sensitivity/DEGREE_TO_RAD;
+        event.values[2] = (float)((short)((status[0]&0xFF)|((status[1]<<8)&0xFF00)))/sensitivity/DEGREE_TO_RAD;
 
         return event;
     }

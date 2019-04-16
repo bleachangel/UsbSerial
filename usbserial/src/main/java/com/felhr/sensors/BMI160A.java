@@ -57,12 +57,13 @@ public class BMI160A extends MadSensor {
         MadSensorEvent event = new MadSensorEvent(3);
         event.sensor = this;
 
+        //x'= z, y' = y, z' = x
         //x
-        event.values[0] = (float)(short)((status[0]&0xFF)|((status[1]<<8)&0xFF00));
+        event.values[0] = (float)(short)((status[4]&0xFF)|((status[5]<<8)&0xFF00));
         //y
         event.values[1] = (float)(short)((status[2]&0xFF)|((status[3]<<8)&0xFF00));
         //z
-        event.values[2] = (float)(short)((status[4]&0xFF)|((status[5]<<8)&0xFF00));
+        event.values[2] = (float)(short)((status[0]&0xFF)|((status[1]<<8)&0xFF00));
 
         //x
         event.values[0] = (float)event.values[0]*GRAVITY_EARTH/mSensitivity;

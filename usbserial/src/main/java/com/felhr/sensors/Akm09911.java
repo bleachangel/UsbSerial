@@ -113,11 +113,11 @@ public class Akm09911 extends MadSensor {
         event.sensor = this;
 
         //x
-        event.values[0] = (float)(short)((status[1]&0xFF)|((status[2]<<8)&0xFF00));
+        event.values[0] = (float)(short)((status[5]&0xFF)|((status[6]<<8)&0xFF00));
         //y
         event.values[1] = (float)(short)((status[3]&0xFF)|((status[4]<<8)&0xFF00));
         //z
-        event.values[2] = (float)(short)((status[5]&0xFF)|((status[6]<<8)&0xFF00));
+        event.values[2] = (float)(short)((status[1]&0xFF)|((status[2]<<8)&0xFF00));
 
         return event;
     }

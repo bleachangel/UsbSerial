@@ -26,6 +26,12 @@ public class LTR579Ps extends MadSensor {
         if(LTR579.getInstance().enablePs(mSession, enable)){
             ret = true;
             mEnable = enable;
+
+            byte mode = 0;
+            if(enable){
+                mode = 1;
+            }
+            LTR579.getInstance().configurePs(mSession, mode);
         }
         return ret;
     }

@@ -27,6 +27,11 @@ public class LTR579Als extends MadSensor {
         if(LTR579.getInstance().enableAls(mSession, enable)){
             ret = true;
             mEnable = enable;
+            byte mode = 0;
+            if(enable){
+                mode = 1;
+            }
+            LTR579.getInstance().configureAls(mSession, mode);
         }
         return ret;
     }

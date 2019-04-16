@@ -44,11 +44,19 @@ public class LTR579 {
         return mInstance;
     }
 
+    public boolean configureAls(MadSession session,byte mode){
+        byte pmu = 0x2;
+        session.configI2C(mChannel, mSlaveAddr, ALS_DATA_START_ADDR,
+                MAIN_CTRL_ADDR, pmu, 100, MadSession.I2C_REGISTER_ADDR_MODE_8,
+                (byte)mode, (byte)ALS_DATA_SIZE, MadSession.RESULT_TIME_OUT);
+
+        return true;
+    }
+
     public boolean enableAls(MadSession session, boolean enable){
         boolean ret = false;
         int len = 1;
-        byte pmu = 0x2;
-        byte mode = 0;
+
 
         byte[] status = session.readI2C(mChannel, mSlaveAddr, MAIN_CTRL_ADDR, MadSession.I2C_REGISTER_ADDR_MODE_8, len,MadSession.RESULT_TIME_OUT);
         if(status == null || status.length != len) {
@@ -57,7 +65,6 @@ public class LTR579 {
 
         if(enable){
             status[0] |= 0x2;
-            mode = 1;
         } else {
             status[0] &= ~0x2;
         }
@@ -66,9 +73,6 @@ public class LTR579 {
         if(size == 1){
             ret = true;
             mEnableAls = enable;
-            session.configI2C(mChannel, mSlaveAddr, ALS_DATA_START_ADDR,
-                    MAIN_CTRL_ADDR, pmu, 25, MadSession.I2C_REGISTER_ADDR_MODE_8,
-                    (byte)mode, (byte)ALS_DATA_SIZE, MadSession.RESULT_TIME_OUT);
         }
 
         return ret;
@@ -85,10 +89,17 @@ public class LTR579 {
         return ret;
     }
 
+    public boolean configurePs(MadSession session,byte mode){
+        byte pmu = 0x1;
+        session.configI2C(mChannel, mSlaveAddr, PS_DATA_START_ADDR,
+                MAIN_CTRL_ADDR, pmu, 100, MadSession.I2C_REGISTER_ADDR_MODE_8,
+                (byte)mode, (byte)PS_DATA_SIZE, MadSession.RESULT_TIME_OUT);
+
+        return true;
+    }
+
     public boolean enablePs(MadSession session, boolean enable){
         boolean ret = false;
-        byte pmu = 0x1;
-        byte mode = 0;
 
         byte[] status = session.readI2C(mChannel, mSlaveAddr, MAIN_CTRL_ADDR, MadSession.I2C_REGISTER_ADDR_MODE_8, 1,MadSession.RESULT_TIME_OUT);
         if(status == null || status.length != 1) {
@@ -97,7 +108,6 @@ public class LTR579 {
 
         if(enable){
             status[0] |= 0x1;
-            mode = 1;
         } else {
             status[0] &= ~0x1;
         }
@@ -106,9 +116,6 @@ public class LTR579 {
         if(size == 1){
             ret = true;
             mEnablePs = enable;
-            session.configI2C(mChannel, mSlaveAddr, PS_DATA_START_ADDR,
-                    MAIN_CTRL_ADDR, pmu, 25, MadSession.I2C_REGISTER_ADDR_MODE_8,
-                    (byte)mode, (byte)PS_DATA_SIZE, MadSession.RESULT_TIME_OUT);
         }
 
         return ret;
