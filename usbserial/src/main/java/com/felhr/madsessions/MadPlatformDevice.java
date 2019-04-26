@@ -54,4 +54,39 @@ public class MadPlatformDevice {
     public int getMicVol(){
         return mSession.getMicVol(DEFAULT_TIME_OUT);
     }
+    public int enterBootloader(){
+        return mSession.enterBootloader(DEFAULT_TIME_OUT);
+    }
+
+    public byte[] getHardwareVersion(){
+        return mSession.getHardwareVersion(DEFAULT_TIME_OUT);
+    }
+
+    public byte[] getFirmwareVersion(){
+        return mSession.getFirmwareVersion(DEFAULT_TIME_OUT);
+    }
+
+    public int setSN(byte[] sn){
+        return mSession.setSN(sn, DEFAULT_TIME_OUT);
+    }
+
+    public byte[] getSN(){
+        return mSession.getSN(DEFAULT_TIME_OUT);
+    }
+
+    public int setDeviceName(byte[] deviceName){
+        return mSession.setDeviceName(deviceName, DEFAULT_TIME_OUT);
+    }
+
+    public byte[] getDeviceName(){
+        return mSession.getDeviceName(DEFAULT_TIME_OUT);
+    }
+
+    public int setVendor(byte[] vendor){
+        return mSession.setVendor(vendor, DEFAULT_TIME_OUT);
+    }
+
+    public byte[] getVendor(){
+        return mSession.getVendor(DEFAULT_TIME_OUT);
+    }
 }

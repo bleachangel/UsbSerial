@@ -8,6 +8,7 @@ import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.graphics.Color;
 import android.os.Bundle;
+import android.os.Environment;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
@@ -24,6 +25,8 @@ import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import java.io.File;
+import java.io.FilenameFilter;
 import java.lang.ref.WeakReference;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -254,6 +257,36 @@ public class MainActivity extends AppCompatActivity implements MadSensorEventLis
                 }
             }
         });
+
+        Button upgrade = (Button) findViewById(R.id.upgrade);
+        upgrade.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if(mPlatformDevice == null){
+                    mPlatformDevice = new MadPlatformDevice();
+                    mPlatformDevice.setup();
+                    mPlatformDevice.reset(0);
+                }
+
+                //mPlatformDevice.enterBootloader();
+                /*byte[] sn = mPlatformDevice.getSN();
+                if(sn != null) {
+                    System.out.print("sn: " + sn.toString());
+                    mPlatformDevice.setSN(sn);
+                }
+                byte[] device = mPlatformDevice.getDeviceName();
+                if(device != null) {
+                    System.out.print("device: " + device.toString());
+                    mPlatformDevice.setDeviceName(device);
+                }
+
+                byte[] vendor = mPlatformDevice.getVendor();
+                if(vendor != null) {
+                    System.out.print("vendor: " + vendor.toString());
+                    mPlatformDevice.setVendor(vendor);
+                }*/
+            }
+        });
     }
 
     public void onStart() {
@@ -271,10 +304,6 @@ public class MainActivity extends AppCompatActivity implements MadSensorEventLis
         mGyroSensor = MadSensorManager.CreateSensor(MadSensorManager.MAD_SENSOR_TYPE_GYROSCOPE);
         mAlsSensor = MadSensorManager.CreateSensor(MadSensorManager.MAD_SENSOR_TYPE_AMBIENT_LIGHT);
         mPsSensor = MadSensorManager.CreateSensor(MadSensorManager.MAD_SENSOR_TYPE_PROXIMITY);
-
-        mPlatformDevice = new MadPlatformDevice();
-        mPlatformDevice.setup();
-        mPlatformDevice.reset(0);
 
         mEnable = false;
         mMagSensor.enable(mEnable);

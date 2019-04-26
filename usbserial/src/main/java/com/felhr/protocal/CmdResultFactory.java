@@ -20,6 +20,15 @@ public class CmdResultFactory {
     public static final String CMD_I2C_CONFIG_TAG   = ":I2C";
     public static final String CMD_SET_MIC_VOL_TAG   = ":SMV";
     public static final String CMD_GET_MIC_VOL_TAG   = ":GMV";
+    public static final String CMD_UPGRADE_FIRMWARE_TAG   = ":UPF";
+    public static final String CMD_GET_HARDWARE_VERSION_TAG = ":GHV";
+    public static final String CMD_GET_FIRMWARE_VERSION_TAG = ":GFV";
+    public static final String CMD_SET_SERIAL_NO_TAG = ":SSN";
+    public static final String CMD_GET_SERIAL_NO_TAG = ":GSN";
+    public static final String CMD_SET_DEVICE_NAME_TAG = ":SDN";
+    public static final String CMD_GET_DEVICE_NAME_TAG = ":GDN";
+    public static final String CMD_SET_VENDOR_TAG = ":SVD";
+    public static final String CMD_GET_VENDOR_TAG = ":GVD";
     public static final String CMD_END_TAG   = ":END";
 
     public static final byte CMD_START_TAG = ':';
@@ -44,7 +53,16 @@ public class CmdResultFactory {
     public static final int CMD_SET_MIC_VOL_VALUE   = 17;
     public static final int CMD_GET_MIC_VOL_VALUE   = 18;
     public static final int CMD_AUTO_REPORT_VALUE   = 19;
-    public static final int CMD_END_VALUE   = 20;
+    public static final int CMD_UPGRADE_FIRMWARE_VALUE   = 20;
+    public static final int CMD_GET_HARDWARE_VERSION_VALUE = 21;
+    public static final int CMD_GET_FIRMWARE_VERSION_VALUE = 22;
+    public static final int CMD_SET_SERIAL_NO_VALUE = 23;
+    public static final int CMD_GET_SERIAL_NO_VALUE = 24;
+    public static final int CMD_SET_DEVICE_NAME_VALUE = 25;
+    public static final int CMD_GET_DEVICE_NAME_VALUE = 26;
+    public static final int CMD_SET_VENDOR_VALUE = 27;
+    public static final int CMD_GET_VENDOR_VALUE = 28;
+    public static final int CMD_END_VALUE   = 29;
     public static final int CMD_INVALID_VALUE    = -1;
 
     public static byte[] convert(byte[] chars){
@@ -129,6 +147,24 @@ public class CmdResultFactory {
             return  new SVLCmdResult(CMD_SET_MIC_VOL_VALUE, para);
         } else if(cmdType.equalsIgnoreCase(CMD_GET_MIC_VOL_TAG)){
             return  new GVLCmdResult(CMD_GET_MIC_VOL_VALUE, para);
+        } else if(cmdType.equalsIgnoreCase(CMD_UPGRADE_FIRMWARE_TAG)){
+            return  new UPFCmdResult(CMD_UPGRADE_FIRMWARE_VALUE, para);
+        } else if(cmdType.equalsIgnoreCase(CMD_GET_HARDWARE_VERSION_TAG)){
+            return  new GHVCmdResult(CMD_GET_HARDWARE_VERSION_VALUE, para);
+        } else if(cmdType.equalsIgnoreCase(CMD_GET_FIRMWARE_VERSION_TAG)){
+            return  new GFVCmdResult(CMD_GET_FIRMWARE_VERSION_VALUE, para);
+        } else if(cmdType.equalsIgnoreCase(CMD_SET_SERIAL_NO_TAG)){
+            return  new SSNCmdResult(CMD_SET_SERIAL_NO_VALUE, para);
+        } else if(cmdType.equalsIgnoreCase(CMD_GET_SERIAL_NO_TAG)){
+            return  new GSNCmdResult(CMD_GET_SERIAL_NO_VALUE, para);
+        } else if(cmdType.equalsIgnoreCase(CMD_SET_DEVICE_NAME_TAG)){
+            return  new SDNCmdResult(CMD_SET_DEVICE_NAME_VALUE, para);
+        } else if(cmdType.equalsIgnoreCase(CMD_GET_DEVICE_NAME_TAG)){
+            return  new GDNCmdResult(CMD_GET_DEVICE_NAME_VALUE, para);
+        } else if(cmdType.equalsIgnoreCase(CMD_SET_VENDOR_TAG)){
+            return  new SVDCmdResult(CMD_SET_VENDOR_VALUE, para);
+        } else if(cmdType.equalsIgnoreCase(CMD_GET_VENDOR_TAG)){
+            return  new GVDCmdResult(CMD_GET_VENDOR_VALUE, para);
         }
 
         return null;

@@ -143,7 +143,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_alignParentBottom="true"
-            android:layout_marginStart="100dp"
+            android:layout_marginStart="120dp"
             android:layout_marginBottom="92dp"
             android:text="@string/disable_acc" />
 
@@ -152,10 +152,8 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_alignParentBottom="true"
-            android:layout_marginStart="200dp"
-            android:layout_marginTop="0dp"
-            android:layout_marginEnd="0dp"
-            android:layout_marginBottom="92dp"
+            android:layout_marginStart="230dp"
+            android:layout_marginBottom="93dp"
             android:text="@string/disable_gyro" />
 
         <Button
@@ -164,7 +162,7 @@
             android:layout_height="wrap_content"
             android:layout_alignParentStart="true"
             android:layout_alignParentBottom="true"
-            android:layout_marginStart="46dp"
+            android:layout_marginStart="0dp"
             android:layout_marginBottom="14dp"
             android:text="@string/disable_als" />
 
@@ -174,9 +172,21 @@
             android:layout_height="wrap_content"
             android:layout_alignBottom="@+id/alsEnable"
             android:layout_alignParentEnd="true"
-            android:layout_marginEnd="49dp"
-            android:layout_marginBottom="2dp"
+            android:layout_marginStart="120dp"
+            android:layout_marginEnd="110dp"
+            android:layout_marginBottom="1dp"
             android:text="@string/disable_ps" />
+
+        <Button
+            android:id="@+id/upgrade"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignBottom="@+id/alsEnable"
+            android:layout_alignParentEnd="true"
+            android:layout_marginStart="200dp"
+            android:layout_marginEnd="9dp"
+            android:layout_marginBottom="1dp"
+            android:text="@string/upgrade" />
     </RelativeLayout>
 
 </RelativeLayout>

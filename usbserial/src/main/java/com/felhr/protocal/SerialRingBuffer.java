@@ -110,7 +110,16 @@ public class SerialRingBuffer{
                         ||(mRingBuffer[next1] == 'O'&& mRingBuffer[next2] == 'F'&& mRingBuffer[next3] == 'L')
                         ||(mRingBuffer[next1] == 'C'&& mRingBuffer[next2] == 'F'&& mRingBuffer[next3] == 'L')
                         ||(mRingBuffer[next1] == 'I'&& mRingBuffer[next2] == '2'&& mRingBuffer[next3] == 'C')
-                        ||(mRingBuffer[next1] == 'A'&& mRingBuffer[next2] == 'T'&& mRingBuffer[next3] == 'R'))) {
+                        ||(mRingBuffer[next1] == 'A'&& mRingBuffer[next2] == 'T'&& mRingBuffer[next3] == 'R')
+                        ||(mRingBuffer[next1] == 'U'&& mRingBuffer[next2] == 'P'&& mRingBuffer[next3] == 'F')
+                        ||(mRingBuffer[next1] == 'G'&& mRingBuffer[next2] == 'H'&& mRingBuffer[next3] == 'V')
+                        ||(mRingBuffer[next1] == 'G'&& mRingBuffer[next2] == 'F'&& mRingBuffer[next3] == 'V')
+                        ||(mRingBuffer[next1] == 'S'&& mRingBuffer[next2] == 'S'&& mRingBuffer[next3] == 'N')
+                        ||(mRingBuffer[next1] == 'G'&& mRingBuffer[next2] == 'S'&& mRingBuffer[next3] == 'N')
+                        ||(mRingBuffer[next1] == 'S'&& mRingBuffer[next2] == 'D'&& mRingBuffer[next3] == 'N')
+                        ||(mRingBuffer[next1] == 'G'&& mRingBuffer[next2] == 'D'&& mRingBuffer[next3] == 'N')
+                        ||(mRingBuffer[next1] == 'S'&& mRingBuffer[next2] == 'V'&& mRingBuffer[next3] == 'D')
+                        ||(mRingBuffer[next1] == 'G'&& mRingBuffer[next2] == 'V'&& mRingBuffer[next3] == 'D'))) {
                     mReadSize -= i;
                     mWriteSize += i;
                     mReadPosStart = (mReadPosStart + i) % mCapacity;

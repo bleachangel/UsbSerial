@@ -7,8 +7,13 @@ import com.felhr.protocal.ATRCmdResult;
 import com.felhr.protocal.CFLCmdResult;
 import com.felhr.protocal.CLCCmdResult;
 import com.felhr.protocal.CmdResultFactory;
+import com.felhr.protocal.GDNCmdResult;
+import com.felhr.protocal.GFVCmdResult;
+import com.felhr.protocal.GHVCmdResult;
 import com.felhr.protocal.GLBCmdResult;
 import com.felhr.protocal.GMVCmdResult;
+import com.felhr.protocal.GSNCmdResult;
+import com.felhr.protocal.GVDCmdResult;
 import com.felhr.protocal.GVLCmdResult;
 import com.felhr.protocal.I2CConfigCmdResult;
 import com.felhr.protocal.I2CReadCmdResult;
@@ -19,10 +24,14 @@ import com.felhr.protocal.OFLCmdResult;
 import com.felhr.protocal.OPCCmdResult;
 import com.felhr.protocal.ProtocalCmd;
 import com.felhr.protocal.ResetCmdResult;
+import com.felhr.protocal.SDNCmdResult;
 import com.felhr.protocal.SLBCmdResult;
 import com.felhr.protocal.SMVCmdResult;
+import com.felhr.protocal.SSNCmdResult;
+import com.felhr.protocal.SVDCmdResult;
 import com.felhr.protocal.SVLCmdResult;
 import com.felhr.protocal.SetupCmdResult;
+import com.felhr.protocal.UPFCmdResult;
 import com.felhr.utils.ByteOps;
 import com.felhr.utils.CRC16;
 
@@ -41,7 +50,7 @@ public class MadSession {
     public static final int I2R_RESULT_QUEUE_SIZE = 5;
     public static final int AUTO_REPEAT_QUEUE_SIZE = 5;
     public static final int I2W_RESULT_QUEUE_SIZE = 5;
-    public static final int DEFAULT_RESULT_QUEUE_SIZE = 5;
+    public static final int DEFAULT_RESULT_QUEUE_SIZE = 2;
     private BlockingQueue<SetupCmdResult> STPQueue = new ArrayBlockingQueue<SetupCmdResult>(DEFAULT_RESULT_QUEUE_SIZE);
     private BlockingQueue<I2CReadCmdResult> I2RQueue = new ArrayBlockingQueue<I2CReadCmdResult>(I2R_RESULT_QUEUE_SIZE);
     private BlockingQueue<ATRCmdResult> ATRQueue = new ArrayBlockingQueue<ATRCmdResult>(AUTO_REPEAT_QUEUE_SIZE);
@@ -60,6 +69,15 @@ public class MadSession {
     private BlockingQueue<SMVCmdResult> SMVQueue = new ArrayBlockingQueue<SMVCmdResult>(DEFAULT_RESULT_QUEUE_SIZE);
     private BlockingQueue<GMVCmdResult> GMVQueue = new ArrayBlockingQueue<GMVCmdResult>(DEFAULT_RESULT_QUEUE_SIZE);
     private BlockingQueue<ResetCmdResult> RSTQueue = new ArrayBlockingQueue<ResetCmdResult>(DEFAULT_RESULT_QUEUE_SIZE);
+    private BlockingQueue<UPFCmdResult> UPFQueue = new ArrayBlockingQueue<UPFCmdResult>(DEFAULT_RESULT_QUEUE_SIZE);
+    private BlockingQueue<GHVCmdResult> GHVQueue = new ArrayBlockingQueue<GHVCmdResult>(DEFAULT_RESULT_QUEUE_SIZE);
+    private BlockingQueue<GFVCmdResult> GFVQueue = new ArrayBlockingQueue<GFVCmdResult>(DEFAULT_RESULT_QUEUE_SIZE);
+    private BlockingQueue<SSNCmdResult> SSNQueue = new ArrayBlockingQueue<SSNCmdResult>(DEFAULT_RESULT_QUEUE_SIZE);
+    private BlockingQueue<GSNCmdResult> GSNQueue = new ArrayBlockingQueue<GSNCmdResult>(DEFAULT_RESULT_QUEUE_SIZE);
+    private BlockingQueue<SDNCmdResult> SDNQueue = new ArrayBlockingQueue<SDNCmdResult>(DEFAULT_RESULT_QUEUE_SIZE);
+    private BlockingQueue<GDNCmdResult> GDNQueue = new ArrayBlockingQueue<GDNCmdResult>(DEFAULT_RESULT_QUEUE_SIZE);
+    private BlockingQueue<SVDCmdResult> SVDQueue = new ArrayBlockingQueue<SVDCmdResult>(DEFAULT_RESULT_QUEUE_SIZE);
+    private BlockingQueue<GVDCmdResult> GVDQueue = new ArrayBlockingQueue<GVDCmdResult>(DEFAULT_RESULT_QUEUE_SIZE);
 
     public int mProtocalVersion = 0x0001;
     public static final int DEFAULT_RETRY_TIMES = 3;
@@ -184,6 +202,69 @@ public class MadSession {
             case CmdResultFactory.CMD_CLOSE_FLASH_LIGHT_VALUE:
                 try {
                     CFLQueue.offer((CFLCmdResult)cmd, ENQUEUE_TIME_OUT, TimeUnit.MILLISECONDS);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                break;
+            case CmdResultFactory.CMD_UPGRADE_FIRMWARE_VALUE:
+                try {
+                    UPFQueue.offer((UPFCmdResult)cmd, ENQUEUE_TIME_OUT, TimeUnit.MILLISECONDS);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                break;
+            case CmdResultFactory.CMD_GET_HARDWARE_VERSION_VALUE:
+                try {
+                    GHVQueue.offer((GHVCmdResult)cmd, ENQUEUE_TIME_OUT, TimeUnit.MILLISECONDS);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                break;
+            case CmdResultFactory.CMD_GET_FIRMWARE_VERSION_VALUE:
+                try {
+                    GFVQueue.offer((GFVCmdResult)cmd, ENQUEUE_TIME_OUT, TimeUnit.MILLISECONDS);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                break;
+            case CmdResultFactory.CMD_SET_SERIAL_NO_VALUE:
+                try {
+                    SSNQueue.offer((SSNCmdResult)cmd, ENQUEUE_TIME_OUT, TimeUnit.MILLISECONDS);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                break;
+            case CmdResultFactory.CMD_GET_SERIAL_NO_VALUE:
+                try {
+                    GSNQueue.offer((GSNCmdResult)cmd, ENQUEUE_TIME_OUT, TimeUnit.MILLISECONDS);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                break;
+            case CmdResultFactory.CMD_SET_DEVICE_NAME_VALUE:
+                try {
+                    SDNQueue.offer((SDNCmdResult)cmd, ENQUEUE_TIME_OUT, TimeUnit.MILLISECONDS);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                break;
+            case CmdResultFactory.CMD_GET_DEVICE_NAME_VALUE:
+                try {
+                    GDNQueue.offer((GDNCmdResult)cmd, ENQUEUE_TIME_OUT, TimeUnit.MILLISECONDS);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                break;
+            case CmdResultFactory.CMD_SET_VENDOR_VALUE:
+                try {
+                    SVDQueue.offer((SVDCmdResult)cmd, ENQUEUE_TIME_OUT, TimeUnit.MILLISECONDS);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                break;
+            case CmdResultFactory.CMD_GET_VENDOR_VALUE:
+                try {
+                    GVDQueue.offer((GVDCmdResult)cmd, ENQUEUE_TIME_OUT, TimeUnit.MILLISECONDS);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
@@ -1253,5 +1334,487 @@ public class MadSession {
             } while (retry > 0 && !find);
         }
         return  vol;
+    }
+
+    public int enterBootloader(long timeOut){
+        byte[] para = new byte[6];
+        int status = -1;
+
+        //session id
+        para[1] = (byte)(mSessionID &0xFF);
+        para[2] = (byte)((mSessionID >>>8)&0xFF);
+
+        //para len
+        para[0] = (byte)5;
+
+        //crc
+        int crc = CRC16.calc(Arrays.copyOfRange(para, 1, 3));
+
+        para[3] = (byte)(crc &0xFF);
+        para[4] = (byte)((crc >>>8) & 0xFF);
+
+        para[5] = (byte)(findStartTag(para, para[0]) & 0xFF);
+
+        byte[] assemble = assembleCmd(CmdResultFactory.CMD_UPGRADE_FIRMWARE_TAG, para);
+        if (MadSessionManager.getInstance().isConnected()) {
+            int retry = DEFAULT_RETRY_TIMES;
+            boolean find = false;
+            do {
+                retry--;
+                MadSessionManager.getInstance().statSendCmd(assemble.length);
+                MadSessionManager.getInstance().getSerialDevice().syncWrite(assemble, SYNC_WRITE_TIME_OUT);
+                UPFCmdResult result = null;
+                long current = System.currentTimeMillis();
+                long quit = current + timeOut;
+                while (current < quit) {
+                    try {
+                        result = (UPFCmdResult) UPFQueue.poll(timeOut, TimeUnit.MILLISECONDS);
+                        if (result != null) {
+                            MadSessionManager.getInstance().statRecvCmd();
+                            find = true;
+                            status = result.mStatus;
+                            break;
+                        }
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+
+                    current = System.currentTimeMillis();
+                }
+            } while (retry > 0 && !find);
+        }
+        return  status;
+    }
+
+    public byte[] getHardwareVersion(long timeOut){
+        byte[] para = new byte[6];
+        byte[] hardwareVersion = null;
+        int status = -1;
+
+        //token(4)+len(1)+session_id(2)+ crc(2)+index(1)
+        //session id
+        para[1] = (byte)(mSessionID &0xFF);
+        para[2] = (byte)((mSessionID >>>8)&0xFF);
+
+        //para len
+        para[0] = (byte)5;
+
+        //crc
+        int crc = CRC16.calc(Arrays.copyOfRange(para, 1, 3));
+
+        para[3] = (byte)(crc &0xFF);
+        para[4] = (byte)((crc >>>8) & 0xFF);
+
+        para[5] = (byte)(findStartTag(para, para[0]) & 0xFF);
+
+        byte[] assemble = assembleCmd(CmdResultFactory.CMD_GET_HARDWARE_VERSION_TAG, para);
+        if (MadSessionManager.getInstance().isConnected()) {
+            int retry = DEFAULT_RETRY_TIMES;
+            boolean find = false;
+            do {
+                retry--;
+                MadSessionManager.getInstance().statSendCmd(assemble.length);
+                MadSessionManager.getInstance().getSerialDevice().syncWrite(assemble, SYNC_WRITE_TIME_OUT);
+                GHVCmdResult result = null;
+                long current = System.currentTimeMillis();
+                long quit = current + timeOut;
+                while (current < quit) {
+                    try {
+                        result = (GHVCmdResult) GHVQueue.poll(timeOut, TimeUnit.MILLISECONDS);
+                        if (result != null) {
+                            MadSessionManager.getInstance().statRecvCmd();
+                            find = true;
+                            hardwareVersion = result.mHardwareVersion;
+                            break;
+                        }
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+
+                    current = System.currentTimeMillis();
+                }
+            } while (retry > 0 && !find);
+        }
+        return  hardwareVersion;
+    }
+
+    public byte[] getFirmwareVersion(long timeOut){
+        byte[] para = new byte[6];
+        byte[] firmwareVersion = null;
+        int status = -1;
+
+        //token(4)+len(1)+session_id(2)+ crc(2)+index(1)
+        //session id
+        para[1] = (byte)(mSessionID &0xFF);
+        para[2] = (byte)((mSessionID >>>8)&0xFF);
+
+        //para len
+        para[0] = (byte)5;
+
+        //crc
+        int crc = CRC16.calc(Arrays.copyOfRange(para, 1, 3));
+
+        para[3] = (byte)(crc &0xFF);
+        para[4] = (byte)((crc >>>8) & 0xFF);
+
+        para[5] = (byte)(findStartTag(para, para[0]) & 0xFF);
+
+        byte[] assemble = assembleCmd(CmdResultFactory.CMD_GET_FIRMWARE_VERSION_TAG, para);
+        if (MadSessionManager.getInstance().isConnected()) {
+            int retry = DEFAULT_RETRY_TIMES;
+            boolean find = false;
+            do {
+                retry--;
+                MadSessionManager.getInstance().statSendCmd(assemble.length);
+                MadSessionManager.getInstance().getSerialDevice().syncWrite(assemble, SYNC_WRITE_TIME_OUT);
+                GFVCmdResult result = null;
+                long current = System.currentTimeMillis();
+                long quit = current + timeOut;
+                while (current < quit) {
+                    try {
+                        result = (GFVCmdResult) GFVQueue.poll(timeOut, TimeUnit.MILLISECONDS);
+                        if (result != null) {
+                            MadSessionManager.getInstance().statRecvCmd();
+                            find = true;
+                            firmwareVersion = result.mFirmwareVersion;
+                            break;
+                        }
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+
+                    current = System.currentTimeMillis();
+                }
+            } while (retry > 0 && !find);
+        }
+        return  firmwareVersion;
+    }
+
+    public  int setSN(byte[] sn,long timeOut){
+        int status = -1;
+        if(sn != null && sn.length > 0) {
+            int snSize = sn.length;
+            int paraLen = 6+snSize;
+            byte[] para = new byte[1+paraLen];
+
+            //token(4)+len(1)+session_id(2)+ sn size(1) + sn(<= 32) + crc(2)+index(1)
+            //session id
+            para[1] = (byte) (mSessionID & 0xFF);
+            para[2] = (byte) ((mSessionID >>> 8) & 0xFF);
+
+            //para len
+            para[0] = (byte) paraLen;
+
+            para[3] = (byte) snSize;
+            System.arraycopy(sn, 0, para, 4, snSize);
+
+            //crc
+            int crc = CRC16.calc(Arrays.copyOfRange(para, 1, paraLen-2));
+
+            para[paraLen - 2] = (byte) (crc & 0xFF);
+            para[paraLen - 1] = (byte) ((crc >>> 8) & 0xFF);
+
+            para[paraLen] = (byte) (findStartTag(para, para[0]) & 0xFF);
+
+            byte[] assemble = assembleCmd(CmdResultFactory.CMD_SET_SERIAL_NO_TAG, para);
+            if (MadSessionManager.getInstance().isConnected()) {
+                int retry = DEFAULT_RETRY_TIMES;
+                boolean find = false;
+                do {
+                    retry--;
+                    MadSessionManager.getInstance().statSendCmd(assemble.length);
+                    MadSessionManager.getInstance().getSerialDevice().syncWrite(assemble, SYNC_WRITE_TIME_OUT);
+                    SSNCmdResult result = null;
+                    long current = System.currentTimeMillis();
+                    long quit = current + timeOut;
+                    while (current < quit) {
+                        try {
+                            result = (SSNCmdResult) SSNQueue.poll(timeOut, TimeUnit.MILLISECONDS);
+                            if (result != null) {
+                                MadSessionManager.getInstance().statRecvCmd();
+                                find = true;
+                                status = result.mStatus;
+                                break;
+                            }
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+
+                        current = System.currentTimeMillis();
+                    }
+                } while (retry > 0 && !find);
+            }
+        }
+        return  status;
+    }
+
+    public byte[] getSN(long timeOut){
+        byte[] para = new byte[6];
+        byte[] sn = null;
+        int status = -1;
+
+        //len(1)+session_id(2)+ crc(2)+index(1)
+        //session id
+        para[1] = (byte)(mSessionID &0xFF);
+        para[2] = (byte)((mSessionID >>>8)&0xFF);
+
+        //para len
+        para[0] = (byte)5;
+
+        //crc
+        int crc = CRC16.calc(Arrays.copyOfRange(para, 1, 3));
+
+        para[3] = (byte)(crc &0xFF);
+        para[4] = (byte)((crc >>>8) & 0xFF);
+
+        para[5] = (byte)(findStartTag(para, para[0]) & 0xFF);
+
+        byte[] assemble = assembleCmd(CmdResultFactory.CMD_GET_SERIAL_NO_TAG, para);
+        if (MadSessionManager.getInstance().isConnected()) {
+            int retry = DEFAULT_RETRY_TIMES;
+            boolean find = false;
+            do {
+                retry--;
+                MadSessionManager.getInstance().statSendCmd(assemble.length);
+                MadSessionManager.getInstance().getSerialDevice().syncWrite(assemble, SYNC_WRITE_TIME_OUT);
+                GSNCmdResult result = null;
+                long current = System.currentTimeMillis();
+                long quit = current + timeOut;
+                while (current < quit) {
+                    try {
+                        result = (GSNCmdResult) GSNQueue.poll(timeOut, TimeUnit.MILLISECONDS);
+                        if (result != null) {
+                            MadSessionManager.getInstance().statRecvCmd();
+                            find = true;
+                            sn = result.mSN;
+                            break;
+                        }
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+
+                    current = System.currentTimeMillis();
+                }
+            } while (retry > 0 && !find);
+        }
+        return  sn;
+    }
+
+    public  int setDeviceName(byte[] deviceName,long timeOut){
+        int status = -1;
+        if(deviceName != null && deviceName.length > 0) {
+            int nameSize = deviceName.length;
+            int paraLen = 6+nameSize;
+            byte[] para = new byte[1+paraLen];
+
+            //token(4)+len(1)+session_id(2)+ sn size(1) + sn(<= 32) + crc(2)+index(1)
+            //session id
+            para[1] = (byte) (mSessionID & 0xFF);
+            para[2] = (byte) ((mSessionID >>> 8) & 0xFF);
+
+            //para len
+            para[0] = (byte) paraLen;
+
+            para[3] = (byte) nameSize;
+            System.arraycopy(deviceName, 0, para, 4, nameSize);
+
+            //crc
+            int crc = CRC16.calc(Arrays.copyOfRange(para, 1, paraLen-2));
+
+            para[paraLen - 2] = (byte) (crc & 0xFF);
+            para[paraLen - 1] = (byte) ((crc >>> 8) & 0xFF);
+
+            para[paraLen] = (byte) (findStartTag(para, para[0]) & 0xFF);
+
+            byte[] assemble = assembleCmd(CmdResultFactory.CMD_SET_DEVICE_NAME_TAG, para);
+            if (MadSessionManager.getInstance().isConnected()) {
+                int retry = DEFAULT_RETRY_TIMES;
+                boolean find = false;
+                do {
+                    retry--;
+                    MadSessionManager.getInstance().statSendCmd(assemble.length);
+                    MadSessionManager.getInstance().getSerialDevice().syncWrite(assemble, SYNC_WRITE_TIME_OUT);
+                    SDNCmdResult result = null;
+                    long current = System.currentTimeMillis();
+                    long quit = current + timeOut;
+                    while (current < quit) {
+                        try {
+                            result = (SDNCmdResult) SDNQueue.poll(timeOut, TimeUnit.MILLISECONDS);
+                            if (result != null) {
+                                MadSessionManager.getInstance().statRecvCmd();
+                                find = true;
+                                status = result.mStatus;
+                                break;
+                            }
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+
+                        current = System.currentTimeMillis();
+                    }
+                } while (retry > 0 && !find);
+            }
+        }
+        return  status;
+    }
+
+    public byte[] getDeviceName(long timeOut){
+        byte[] para = new byte[6];
+        byte[] deviceName = null;
+
+        //len(1)+session_id(2)+ crc(2)+index(1)
+        //session id
+        para[1] = (byte)(mSessionID &0xFF);
+        para[2] = (byte)((mSessionID >>>8)&0xFF);
+
+        //para len
+        para[0] = (byte)5;
+
+        //crc
+        int crc = CRC16.calc(Arrays.copyOfRange(para, 1, 3));
+
+        para[3] = (byte)(crc &0xFF);
+        para[4] = (byte)((crc >>>8) & 0xFF);
+
+        para[5] = (byte)(findStartTag(para, para[0]) & 0xFF);
+
+        byte[] assemble = assembleCmd(CmdResultFactory.CMD_GET_DEVICE_NAME_TAG, para);
+        if (MadSessionManager.getInstance().isConnected()) {
+            int retry = DEFAULT_RETRY_TIMES;
+            boolean find = false;
+            do {
+                retry--;
+                MadSessionManager.getInstance().statSendCmd(assemble.length);
+                MadSessionManager.getInstance().getSerialDevice().syncWrite(assemble, SYNC_WRITE_TIME_OUT);
+                GDNCmdResult result = null;
+                long current = System.currentTimeMillis();
+                long quit = current + timeOut;
+                while (current < quit) {
+                    try {
+                        result = (GDNCmdResult) GDNQueue.poll(timeOut, TimeUnit.MILLISECONDS);
+                        if (result != null) {
+                            MadSessionManager.getInstance().statRecvCmd();
+                            find = true;
+                            deviceName = result.mDeviceName;
+                            break;
+                        }
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+
+                    current = System.currentTimeMillis();
+                }
+            } while (retry > 0 && !find);
+        }
+        return  deviceName;
+    }
+
+    public  int setVendor(byte[] vendor,long timeOut){
+        int status = -1;
+        if(vendor != null && vendor.length > 0) {
+            int vendorSize = vendor.length;
+            int paraLen = 6+vendorSize;
+            byte[] para = new byte[1+paraLen];
+
+            //token(4)+len(1)+session_id(2)+ sn size(1) + sn(<= 32) + crc(2)+index(1)
+            //session id
+            para[1] = (byte) (mSessionID & 0xFF);
+            para[2] = (byte) ((mSessionID >>> 8) & 0xFF);
+
+            //para len
+            para[0] = (byte) paraLen;
+
+            para[3] = (byte) vendorSize;
+            System.arraycopy(vendor, 0, para, 4, vendorSize);
+
+            //crc
+            int crc = CRC16.calc(Arrays.copyOfRange(para, 1, paraLen-2));
+
+            para[paraLen - 2] = (byte) (crc & 0xFF);
+            para[paraLen - 1] = (byte) ((crc >>> 8) & 0xFF);
+
+            para[paraLen] = (byte) (findStartTag(para, para[0]) & 0xFF);
+
+            byte[] assemble = assembleCmd(CmdResultFactory.CMD_SET_VENDOR_TAG, para);
+            if (MadSessionManager.getInstance().isConnected()) {
+                int retry = DEFAULT_RETRY_TIMES;
+                boolean find = false;
+                do {
+                    retry--;
+                    MadSessionManager.getInstance().statSendCmd(assemble.length);
+                    MadSessionManager.getInstance().getSerialDevice().syncWrite(assemble, SYNC_WRITE_TIME_OUT);
+                    SVDCmdResult result = null;
+                    long current = System.currentTimeMillis();
+                    long quit = current + timeOut;
+                    while (current < quit) {
+                        try {
+                            result = (SVDCmdResult) SVDQueue.poll(timeOut, TimeUnit.MILLISECONDS);
+                            if (result != null) {
+                                MadSessionManager.getInstance().statRecvCmd();
+                                find = true;
+                                status = result.mStatus;
+                                break;
+                            }
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+
+                        current = System.currentTimeMillis();
+                    }
+                } while (retry > 0 && !find);
+            }
+        }
+        return  status;
+    }
+
+    public byte[] getVendor(long timeOut){
+        byte[] para = new byte[6];
+        byte[] vendor = null;
+
+        //len(1)+session_id(2)+ crc(2)+index(1)
+        //session id
+        para[1] = (byte)(mSessionID &0xFF);
+        para[2] = (byte)((mSessionID >>>8)&0xFF);
+
+        //para len
+        para[0] = (byte)5;
+
+        //crc
+        int crc = CRC16.calc(Arrays.copyOfRange(para, 1, 3));
+
+        para[3] = (byte)(crc &0xFF);
+        para[4] = (byte)((crc >>>8) & 0xFF);
+
+        para[5] = (byte)(findStartTag(para, para[0]) & 0xFF);
+
+        byte[] assemble = assembleCmd(CmdResultFactory.CMD_GET_VENDOR_TAG, para);
+        if (MadSessionManager.getInstance().isConnected()) {
+            int retry = DEFAULT_RETRY_TIMES;
+            boolean find = false;
+            do {
+                retry--;
+                MadSessionManager.getInstance().statSendCmd(assemble.length);
+                MadSessionManager.getInstance().getSerialDevice().syncWrite(assemble, SYNC_WRITE_TIME_OUT);
+                GVDCmdResult result = null;
+                long current = System.currentTimeMillis();
+                long quit = current + timeOut;
+                while (current < quit) {
+                    try {
+                        result = (GVDCmdResult) GVDQueue.poll(timeOut, TimeUnit.MILLISECONDS);
+                        if (result != null) {
+                            MadSessionManager.getInstance().statRecvCmd();
+                            find = true;
+                            vendor = result.mVendor;
+                            break;
+                        }
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+
+                    current = System.currentTimeMillis();
+                }
+            } while (retry > 0 && !find);
+        }
+        return  vendor;
     }
 }
