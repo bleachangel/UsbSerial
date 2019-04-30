@@ -6,6 +6,7 @@ import android.hardware.usb.UsbDeviceConnection;
 import com.felhr.protocal.ATRCmdResult;
 import com.felhr.protocal.CFLCmdResult;
 import com.felhr.protocal.CLCCmdResult;
+import com.felhr.protocal.CLLCmdResult;
 import com.felhr.protocal.CmdResultFactory;
 import com.felhr.protocal.GDNCmdResult;
 import com.felhr.protocal.GFVCmdResult;
@@ -23,6 +24,7 @@ import com.felhr.protocal.IOReadCmdResult;
 import com.felhr.protocal.IOWriteCmdResult;
 import com.felhr.protocal.OFLCmdResult;
 import com.felhr.protocal.OPCCmdResult;
+import com.felhr.protocal.OPLCmdResult;
 import com.felhr.protocal.ProtocalCmd;
 import com.felhr.protocal.RKVCmdResult;
 import com.felhr.protocal.ResetCmdResult;
@@ -85,6 +87,8 @@ public class MadSession {
     private BlockingQueue<SKFCmdResult> SKFQueue = new ArrayBlockingQueue<SKFCmdResult>(DEFAULT_RESULT_QUEUE_SIZE);
     private BlockingQueue<GKFCmdResult> GKFQueue = new ArrayBlockingQueue<GKFCmdResult>(DEFAULT_RESULT_QUEUE_SIZE);
     private BlockingQueue<RKVCmdResult> RKVQueue = new ArrayBlockingQueue<RKVCmdResult>(KEY_RESULT_QUEUE_SIZE);
+    private BlockingQueue<OPLCmdResult> OPLQueue = new ArrayBlockingQueue<OPLCmdResult>(DEFAULT_RESULT_QUEUE_SIZE);
+    private BlockingQueue<CLLCmdResult> CLLQueue = new ArrayBlockingQueue<CLLCmdResult>(DEFAULT_RESULT_QUEUE_SIZE);
 
     public int mProtocalVersion = 0x0001;
     public static final int DEFAULT_RETRY_TIMES = 3;
@@ -293,6 +297,20 @@ public class MadSession {
             case CmdResultFactory.CMD_REPORT_KEY_VALUE:
                 try {
                     RKVQueue.offer((RKVCmdResult)cmd, ENQUEUE_TIME_OUT, TimeUnit.MILLISECONDS);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                break;
+            case CmdResultFactory.CMD_OPEN_LCD_VALUE:
+                try {
+                    OPLQueue.offer((OPLCmdResult)cmd, ENQUEUE_TIME_OUT, TimeUnit.MILLISECONDS);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                break;
+            case CmdResultFactory.CMD_CLOSE_LCD_VALUE:
+                try {
+                    CLLQueue.offer((CLLCmdResult)cmd, ENQUEUE_TIME_OUT, TimeUnit.MILLISECONDS);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
@@ -1983,5 +2001,107 @@ public class MadSession {
             }
         }
         return  key;
+    }
+
+    public int openLCD(long timeOut){
+        //byte[] paraStr = null;
+        byte[] para = new byte[6];
+        int status = 0;
+
+        //session id
+        para[1] = (byte)(mSessionID &0xFF);
+        para[2] = (byte)((mSessionID >>>8)&0xFF);
+
+        //para len
+        para[0] = (byte)5;
+
+        //crc
+        int crc = CRC16.calc(Arrays.copyOfRange(para, 1, 3));
+
+        para[3] = (byte)(crc &0xFF);
+        para[4] = (byte)((crc >>>8) &0xFF);
+
+        para[5] = (byte)(findStartTag(para, para[0]) & 0xFF);
+        //paraStr = ByteOps.byteArrayToHexStr(para);
+        byte[] assemble = assembleCmd(CmdResultFactory.CMD_OPEN_LCD_TAG, para);
+        if (MadSessionManager.getInstance().isConnected()) {
+            int retry = DEFAULT_RETRY_TIMES;
+            boolean find = false;
+            do {
+                retry--;
+                MadSessionManager.getInstance().statSendCmd(assemble.length);
+                MadSessionManager.getInstance().getSerialDevice().syncWrite(assemble, SYNC_WRITE_TIME_OUT);
+                OPLCmdResult result = null;
+                long current = System.currentTimeMillis();
+                long quit = current + timeOut;
+                while (current < quit) {
+                    try {
+                        result = (OPLCmdResult) OPLQueue.poll(timeOut, TimeUnit.MILLISECONDS);
+                        if (result != null) {
+                            MadSessionManager.getInstance().statRecvCmd();
+                            find = true;
+                            status = result.mStatus;
+                            break;
+                        }
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+
+                    current = System.currentTimeMillis();
+                }
+            } while (retry > 0 && !find);
+        }
+        return  status;
+    }
+
+    public int closeLCD(long timeOut){
+        //byte[] paraStr = null;
+        byte[] para = new byte[6];
+        int status = 0;
+
+        //session id
+        para[1] = (byte)(mSessionID &0xFF);
+        para[2] = (byte)((mSessionID >>>8)&0xFF);
+
+        //para len
+        para[0] = (byte)5;
+
+        //crc
+        int crc = CRC16.calc(Arrays.copyOfRange(para, 1, 3));
+
+        para[3] = (byte)(crc &0xFF);
+        para[4] = (byte)((crc>>>8) & 0xFF);
+
+        para[5] = (byte)(findStartTag(para, para[0]) & 0xFF);
+        //paraStr = ByteOps.byteArrayToHexStr(para);
+        byte[] assemble = assembleCmd(CmdResultFactory.CMD_CLOSE_LCD_TAG, para);
+        if (MadSessionManager.getInstance().isConnected()) {
+            int retry = DEFAULT_RETRY_TIMES;
+            boolean find = false;
+            do {
+                retry--;
+                MadSessionManager.getInstance().statSendCmd(assemble.length);
+                MadSessionManager.getInstance().getSerialDevice().syncWrite(assemble, SYNC_WRITE_TIME_OUT);
+                CLLCmdResult result = null;
+                long current = System.currentTimeMillis();
+                long quit = current + timeOut;
+                while (current < quit) {
+                    try {
+                        result = (CLLCmdResult) CLLQueue.poll(timeOut, TimeUnit.MILLISECONDS);
+                        if (result != null) {
+                            MadSessionManager.getInstance().statRecvCmd();
+                            find = true;
+                            status = result.mStatus;
+                            break;
+                        }
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+
+                    current = System.currentTimeMillis();
+                }
+            } while (retry > 0 && !find);
+        }
+        return  status;
     }
 }

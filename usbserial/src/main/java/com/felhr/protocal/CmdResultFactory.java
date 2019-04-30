@@ -32,6 +32,8 @@ public class CmdResultFactory {
     public static final String CMD_SET_KEY_FUNCTION_TAG = ":SKF";
     public static final String CMD_GET_KEY_FUNCTION_TAG = ":GKF";
     public static final String CMD_REPORT_KEY_VALUE_TAG = ":RKV";
+    public static final String CMD_OPEN_LCD_TAG   = ":OPL";
+    public static final String CMD_CLOSE_LCD_TAG   = ":CLL";
     public static final String CMD_END_TAG   = ":END";
 
     public static final byte CMD_START_TAG = ':';
@@ -68,7 +70,9 @@ public class CmdResultFactory {
     public static final int CMD_SET_KEY_FUNCTION_VALUE = 29;
     public static final int CMD_GET_KEY_FUNCTION_VALUE = 30;
     public static final int CMD_REPORT_KEY_VALUE = 31;
-    public static final int CMD_END_VALUE   = 32;
+    public static final int CMD_OPEN_LCD_VALUE   = 32;
+    public static final int CMD_CLOSE_LCD_VALUE   = 33;
+    public static final int CMD_END_VALUE   = 34;
     public static final int CMD_INVALID_VALUE    = -1;
 
     public static byte[] convert(byte[] chars){
@@ -177,6 +181,10 @@ public class CmdResultFactory {
             return  new GKFCmdResult(CMD_GET_KEY_FUNCTION_VALUE, para);
         } else if(cmdType.equalsIgnoreCase(CMD_REPORT_KEY_VALUE_TAG)){
             return  new RKVCmdResult(CMD_REPORT_KEY_VALUE, para);
+        } else if(cmdType.equalsIgnoreCase(CMD_OPEN_LCD_TAG)){
+            return  new OPLCmdResult(CMD_OPEN_LCD_VALUE, para);
+        } else if(cmdType.equalsIgnoreCase(CMD_CLOSE_LCD_TAG)){
+            return  new CLLCmdResult(CMD_CLOSE_LCD_VALUE, para);
         }
 
         return null;

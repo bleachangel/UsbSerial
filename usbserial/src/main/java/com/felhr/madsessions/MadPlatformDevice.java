@@ -110,4 +110,12 @@ public class MadPlatformDevice {
     public MadKeyEvent readKey(){
         return mSession.readKey(DEFAULT_TIME_OUT);
     }
+
+    public int openLCD(){
+        return mSession.openLCD(DEFAULT_TIME_OUT);
+    }
+
+    public int closeLCD(){
+        return mSession.closeLCD(DEFAULT_TIME_OUT);
+    }
 }
