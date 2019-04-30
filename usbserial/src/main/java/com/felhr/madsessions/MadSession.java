@@ -10,6 +10,7 @@ import com.felhr.protocal.CmdResultFactory;
 import com.felhr.protocal.GDNCmdResult;
 import com.felhr.protocal.GFVCmdResult;
 import com.felhr.protocal.GHVCmdResult;
+import com.felhr.protocal.GKFCmdResult;
 import com.felhr.protocal.GLBCmdResult;
 import com.felhr.protocal.GMVCmdResult;
 import com.felhr.protocal.GSNCmdResult;
@@ -23,8 +24,10 @@ import com.felhr.protocal.IOWriteCmdResult;
 import com.felhr.protocal.OFLCmdResult;
 import com.felhr.protocal.OPCCmdResult;
 import com.felhr.protocal.ProtocalCmd;
+import com.felhr.protocal.RKVCmdResult;
 import com.felhr.protocal.ResetCmdResult;
 import com.felhr.protocal.SDNCmdResult;
+import com.felhr.protocal.SKFCmdResult;
 import com.felhr.protocal.SLBCmdResult;
 import com.felhr.protocal.SMVCmdResult;
 import com.felhr.protocal.SSNCmdResult;
@@ -51,6 +54,7 @@ public class MadSession {
     public static final int AUTO_REPEAT_QUEUE_SIZE = 5;
     public static final int I2W_RESULT_QUEUE_SIZE = 5;
     public static final int DEFAULT_RESULT_QUEUE_SIZE = 2;
+    public static final int KEY_RESULT_QUEUE_SIZE = 5;
     private BlockingQueue<SetupCmdResult> STPQueue = new ArrayBlockingQueue<SetupCmdResult>(DEFAULT_RESULT_QUEUE_SIZE);
     private BlockingQueue<I2CReadCmdResult> I2RQueue = new ArrayBlockingQueue<I2CReadCmdResult>(I2R_RESULT_QUEUE_SIZE);
     private BlockingQueue<ATRCmdResult> ATRQueue = new ArrayBlockingQueue<ATRCmdResult>(AUTO_REPEAT_QUEUE_SIZE);
@@ -78,6 +82,9 @@ public class MadSession {
     private BlockingQueue<GDNCmdResult> GDNQueue = new ArrayBlockingQueue<GDNCmdResult>(DEFAULT_RESULT_QUEUE_SIZE);
     private BlockingQueue<SVDCmdResult> SVDQueue = new ArrayBlockingQueue<SVDCmdResult>(DEFAULT_RESULT_QUEUE_SIZE);
     private BlockingQueue<GVDCmdResult> GVDQueue = new ArrayBlockingQueue<GVDCmdResult>(DEFAULT_RESULT_QUEUE_SIZE);
+    private BlockingQueue<SKFCmdResult> SKFQueue = new ArrayBlockingQueue<SKFCmdResult>(DEFAULT_RESULT_QUEUE_SIZE);
+    private BlockingQueue<GKFCmdResult> GKFQueue = new ArrayBlockingQueue<GKFCmdResult>(DEFAULT_RESULT_QUEUE_SIZE);
+    private BlockingQueue<RKVCmdResult> RKVQueue = new ArrayBlockingQueue<RKVCmdResult>(KEY_RESULT_QUEUE_SIZE);
 
     public int mProtocalVersion = 0x0001;
     public static final int DEFAULT_RETRY_TIMES = 3;
@@ -265,6 +272,27 @@ public class MadSession {
             case CmdResultFactory.CMD_GET_VENDOR_VALUE:
                 try {
                     GVDQueue.offer((GVDCmdResult)cmd, ENQUEUE_TIME_OUT, TimeUnit.MILLISECONDS);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                break;
+            case CmdResultFactory.CMD_SET_KEY_FUNCTION_VALUE:
+                try {
+                    SKFQueue.offer((SKFCmdResult)cmd, ENQUEUE_TIME_OUT, TimeUnit.MILLISECONDS);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                break;
+            case CmdResultFactory.CMD_GET_KEY_FUNCTION_VALUE:
+                try {
+                    GKFQueue.offer((GKFCmdResult)cmd, ENQUEUE_TIME_OUT, TimeUnit.MILLISECONDS);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                break;
+            case CmdResultFactory.CMD_REPORT_KEY_VALUE:
+                try {
+                    RKVQueue.offer((RKVCmdResult)cmd, ENQUEUE_TIME_OUT, TimeUnit.MILLISECONDS);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
@@ -1816,5 +1844,144 @@ public class MadSession {
             } while (retry > 0 && !find);
         }
         return  vendor;
+    }
+
+    public  int setKeyFunction(int key, int function, long timeOut){
+        int status = -1;
+        if(key < MadKeyEvent.MAD_MAX_KEY_NUM) {
+            int paraLen = 7;
+            byte[] para = new byte[1+paraLen];
+
+            //token(4)+len(1)+session_id(2)+ key value(1) + function(1) + crc(2)+index(1)
+            //session id
+            para[1] = (byte) (mSessionID & 0xFF);
+            para[2] = (byte) ((mSessionID >>> 8) & 0xFF);
+
+            //para len
+            para[0] = (byte) paraLen;
+
+            para[3] = (byte) key;
+            para[4] = (byte) function;
+
+            //crc
+            int crc = CRC16.calc(Arrays.copyOfRange(para, 1, paraLen-2));
+
+            para[paraLen - 2] = (byte) (crc & 0xFF);
+            para[paraLen - 1] = (byte) ((crc >>> 8) & 0xFF);
+
+            para[paraLen] = (byte) (findStartTag(para, para[0]) & 0xFF);
+
+            byte[] assemble = assembleCmd(CmdResultFactory.CMD_SET_KEY_FUNCTION_TAG, para);
+            if (MadSessionManager.getInstance().isConnected()) {
+                int retry = DEFAULT_RETRY_TIMES;
+                boolean find = false;
+                do {
+                    retry--;
+                    MadSessionManager.getInstance().statSendCmd(assemble.length);
+                    MadSessionManager.getInstance().getSerialDevice().syncWrite(assemble, SYNC_WRITE_TIME_OUT);
+                    SKFCmdResult result = null;
+                    long current = System.currentTimeMillis();
+                    long quit = current + timeOut;
+                    while (current < quit) {
+                        try {
+                            result = (SKFCmdResult) SKFQueue.poll(timeOut, TimeUnit.MILLISECONDS);
+                            if (result != null) {
+                                MadSessionManager.getInstance().statRecvCmd();
+                                find = true;
+                                status = result.mStatus;
+                                break;
+                            }
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+
+                        current = System.currentTimeMillis();
+                    }
+                } while (retry > 0 && !find);
+            }
+        }
+        return  status;
+    }
+
+    public int getKeyFunction(int key, long timeOut){
+        int function = -1;
+        if(key < MadKeyEvent.MAD_MAX_KEY_NUM) {
+            byte[] para = new byte[7];
+            byte[] vendor = null;
+
+            //token(4)+len(1)+session_id(2)+ key value(1) + crc(2)+index(1)
+            //session id
+            para[1] = (byte) (mSessionID & 0xFF);
+            para[2] = (byte) ((mSessionID >>> 8) & 0xFF);
+
+            //para len
+            para[0] = (byte) 6;
+            para[3] = (byte) key;
+
+            //crc
+            int crc = CRC16.calc(Arrays.copyOfRange(para, 1, 4));
+
+            para[4] = (byte) (crc & 0xFF);
+            para[5] = (byte) ((crc >>> 8) & 0xFF);
+
+            para[6] = (byte) (findStartTag(para, para[0]) & 0xFF);
+
+            byte[] assemble = assembleCmd(CmdResultFactory.CMD_GET_KEY_FUNCTION_TAG, para);
+            if (MadSessionManager.getInstance().isConnected()) {
+                int retry = DEFAULT_RETRY_TIMES;
+                boolean find = false;
+                do {
+                    retry--;
+                    MadSessionManager.getInstance().statSendCmd(assemble.length);
+                    MadSessionManager.getInstance().getSerialDevice().syncWrite(assemble, SYNC_WRITE_TIME_OUT);
+                    GKFCmdResult result = null;
+                    long current = System.currentTimeMillis();
+                    long quit = current + timeOut;
+                    while (current < quit) {
+                        try {
+                            result = (GKFCmdResult) GKFQueue.poll(timeOut, TimeUnit.MILLISECONDS);
+                            if (result != null) {
+                                MadSessionManager.getInstance().statRecvCmd();
+                                find = true;
+                                function = result.mFunction;
+                                break;
+                            }
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+
+                        current = System.currentTimeMillis();
+                    }
+                } while (retry > 0 && !find);
+            }
+        }
+        return  function;
+    }
+
+    public MadKeyEvent readKey(long timeOut){
+        MadKeyEvent key = null;
+        if (MadSessionManager.getInstance().isConnected()) {
+            boolean find = false;
+            RKVCmdResult result = null;
+            long current = System.currentTimeMillis();
+            long quit = current + timeOut;
+            while(current < quit){
+                try {
+                    result = (RKVCmdResult)RKVQueue.poll(timeOut, TimeUnit.MILLISECONDS);
+                    if(result != null){
+                        MadSessionManager.getInstance().statRecvCmd();
+
+                        find = true;
+                        key = new MadKeyEvent(result.mKeyState, result.mKeyValue);
+                        break;
+                    }
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+
+                current = System.currentTimeMillis();
+            }
+        }
+        return  key;
     }
 }

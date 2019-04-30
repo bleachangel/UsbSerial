@@ -3,8 +3,17 @@ package com.felhr.madsessions;
 public class MadPlatformDevice {
     public static final int DEFAULT_TIME_OUT = 100;
     public MadSession mSession = null;
-    public MadPlatformDevice(){
+    private static MadPlatformDevice mInstance = null;
+    private MadPlatformDevice(){
         mSession = new MadSession();
+    }
+
+    public static MadPlatformDevice getInstance(){
+        if(mInstance == null){
+            mInstance = new MadPlatformDevice();
+        }
+
+        return mInstance;
     }
 
     public int setup(){
@@ -88,5 +97,17 @@ public class MadPlatformDevice {
 
     public byte[] getVendor(){
         return mSession.getVendor(DEFAULT_TIME_OUT);
+    }
+
+    public int setKeyFunction(int key, int function){
+        return mSession.setKeyFunction(key, function, DEFAULT_TIME_OUT);
+    }
+
+    public int getKeyFunction(int key){
+        return mSession.getKeyFunction(key, DEFAULT_TIME_OUT);
+    }
+
+    public MadKeyEvent readKey(){
+        return mSession.readKey(DEFAULT_TIME_OUT);
     }
 }

@@ -17,6 +17,7 @@ import android.text.Spannable;
 import android.text.SpannableString;
 import android.text.method.ScrollingMovementMethod;
 import android.text.style.ForegroundColorSpan;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.CheckBox;
@@ -32,6 +33,8 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Set;
 
+import com.felhr.madsessions.MadKeyEvent;
+import com.felhr.madsessions.MadKeyEventListener;
 import com.felhr.madsessions.MadPlatformDevice;
 import com.felhr.madsessions.MadSession;
 import com.felhr.sensors.MadSensor;
@@ -40,8 +43,8 @@ import com.felhr.sensors.MadSensorEventListener;
 import com.felhr.sensors.MadSensorManager;
 import com.felhr.utils.CRC16;
 
-public class MainActivity extends AppCompatActivity implements MadSensorEventListener {
-
+public class MainActivity extends AppCompatActivity implements MadSensorEventListener,MadKeyEventListener {
+    public static String TAG = "MainActivity";
     /*
      * Notifications from UsbService will be received here.
      */
@@ -99,6 +102,7 @@ public class MainActivity extends AppCompatActivity implements MadSensorEventLis
             mSensorService.registerListener(instance, mGyroSensor, 5000);
             mSensorService.registerListener(instance, mAlsSensor, 5000);
             mSensorService.registerListener(instance, mPsSensor, 5000);
+            mSensorService.registerKeyListener(instance, MadKeyEvent.MAD_KEY_0);
         }
 
         @Override
@@ -112,6 +116,17 @@ public class MainActivity extends AppCompatActivity implements MadSensorEventLis
         SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         Date date = new Date(timeMillis);
         return simpleDateFormat.format(date);
+    }
+
+    public int calcSum(byte[] data, int size){
+        int sum = 0;
+        while (size > 0)
+        {
+            sum = sum + (data[size - 1] & 0xFF);
+            size--;
+        }
+
+        return 1 + (~sum);
     }
 
     @Override
@@ -262,12 +277,23 @@ public class MainActivity extends AppCompatActivity implements MadSensorEventLis
         upgrade.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if(mPlatformDevice == null){
-                    mPlatformDevice = new MadPlatformDevice();
+                /*if(mPlatformDevice == null){
+                    mPlatformDevice = MadPlatformDevice.getInstance();
                     mPlatformDevice.setup();
                     mPlatformDevice.reset(0);
+                }*/
+                mPlatformDevice = MadPlatformDevice.getInstance();
+                byte[] vendor = mPlatformDevice.getVendor();
+                if(vendor != null) {
+                    System.out.print("vendor: " + vendor.toString());
+                    String test = "TEST";
+                    mPlatformDevice.setVendor(test.getBytes());
                 }
 
+                //byte[] data = { (byte)0x01,   (byte)0x37,   (byte)0x05,   (byte)0x00,   (byte)0x20,   (byte)0x10,  (byte)0xb5,   (byte)0x06,   (byte)0x4c};
+                //int crc = calcSum(data, data.length);
+                //Log.d(TAG, "crc: " + crc);
+                //mPlatformDevice.setKeyFunction(MadKeyEvent.MAD_KEY_0, 1);
                 //mPlatformDevice.enterBootloader();
                 /*byte[] sn = mPlatformDevice.getSN();
                 if(sn != null) {
@@ -453,6 +479,16 @@ public class MainActivity extends AppCompatActivity implements MadSensorEventLis
 
     @Override
     public void onMadAccuracyChanged(MadSensor sensor, int accuracy) {
+    }
+
+    @Override
+    public void onKeyDown(int event) {
+        System.out.println("key down : "+event);
+    }
+
+    @Override
+    public void onKeyUp(int event) {
+        System.out.println("key up : "+event);
     }
 
     /*

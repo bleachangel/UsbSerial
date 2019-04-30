@@ -14,6 +14,7 @@ import java.util.Map;
 public class MadSessionManager {
     private static final MadSessionManager ourInstance = new MadSessionManager();
     private Map<Integer,MadSession> mSessions = new HashMap<Integer, MadSession>();
+    public static final int BROADCAST_SESSION_ID = 0;
     public static final int MIN_SESSION_ID = 1;
     public static final int MAX_SESSION_ID = 0xFFFF;
     public static final int BAUD_RATE = 921600;

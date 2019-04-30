@@ -29,6 +29,9 @@ public class CmdResultFactory {
     public static final String CMD_GET_DEVICE_NAME_TAG = ":GDN";
     public static final String CMD_SET_VENDOR_TAG = ":SVD";
     public static final String CMD_GET_VENDOR_TAG = ":GVD";
+    public static final String CMD_SET_KEY_FUNCTION_TAG = ":SKF";
+    public static final String CMD_GET_KEY_FUNCTION_TAG = ":GKF";
+    public static final String CMD_REPORT_KEY_VALUE_TAG = ":RKV";
     public static final String CMD_END_TAG   = ":END";
 
     public static final byte CMD_START_TAG = ':';
@@ -62,7 +65,10 @@ public class CmdResultFactory {
     public static final int CMD_GET_DEVICE_NAME_VALUE = 26;
     public static final int CMD_SET_VENDOR_VALUE = 27;
     public static final int CMD_GET_VENDOR_VALUE = 28;
-    public static final int CMD_END_VALUE   = 29;
+    public static final int CMD_SET_KEY_FUNCTION_VALUE = 29;
+    public static final int CMD_GET_KEY_FUNCTION_VALUE = 30;
+    public static final int CMD_REPORT_KEY_VALUE = 31;
+    public static final int CMD_END_VALUE   = 32;
     public static final int CMD_INVALID_VALUE    = -1;
 
     public static byte[] convert(byte[] chars){
@@ -165,6 +171,12 @@ public class CmdResultFactory {
             return  new SVDCmdResult(CMD_SET_VENDOR_VALUE, para);
         } else if(cmdType.equalsIgnoreCase(CMD_GET_VENDOR_TAG)){
             return  new GVDCmdResult(CMD_GET_VENDOR_VALUE, para);
+        } else if(cmdType.equalsIgnoreCase(CMD_SET_KEY_FUNCTION_TAG)){
+            return  new SKFCmdResult(CMD_SET_KEY_FUNCTION_VALUE, para);
+        } else if(cmdType.equalsIgnoreCase(CMD_GET_KEY_FUNCTION_TAG)){
+            return  new GKFCmdResult(CMD_GET_KEY_FUNCTION_VALUE, para);
+        } else if(cmdType.equalsIgnoreCase(CMD_REPORT_KEY_VALUE_TAG)){
+            return  new RKVCmdResult(CMD_REPORT_KEY_VALUE, para);
         }
 
         return null;

@@ -14,6 +14,9 @@ import android.os.Handler;
 import android.os.IBinder;
 import android.util.Log;
 
+import com.felhr.madsessions.MadKeyEvent;
+import com.felhr.madsessions.MadKeyEventListener;
+import com.felhr.madsessions.MadPlatformDevice;
 import com.felhr.madsessions.MadSession;
 import com.felhr.madsessions.MadSessionManager;
 import com.felhr.sensors.MadSensor;
@@ -103,6 +106,47 @@ public class MadSensorService extends Service {
         }
     }
 
+    private HashMap< MadKeyEventListener, Integer> mKeyEventListeners = new HashMap<MadKeyEventListener, Integer>();
+    public boolean registerKeyListener(MadKeyEventListener listener, int key){
+        synchronized (mKeyEventListeners) {
+            mKeyEventListeners.put(listener, key);
+        }
+        return true;
+    }
+
+    public boolean unregisterKeyListener(MadKeyEventListener listener){
+        synchronized (mKeyEventListeners) {
+            Iterator<Map.Entry<MadKeyEventListener, Integer>> keys = mKeyEventListeners.entrySet().iterator();
+            while (keys.hasNext()) {
+                Map.Entry<MadKeyEventListener, Integer> key = keys.next();
+                if (key.getKey().equals(listener)) {
+                    keys.remove();
+                }
+            }
+        }
+        return true;
+    }
+
+    public void dispatchKeyEvent(MadKeyEvent event){
+        if (mKeyEventListeners == null || event == null) {
+            return;
+        }
+
+        synchronized (mKeyEventListeners) {
+            Iterator<Map.Entry<MadKeyEventListener, Integer>> keys = mKeyEventListeners.entrySet().iterator();
+            while (keys.hasNext()) {
+                Map.Entry<MadKeyEventListener, Integer> key = keys.next();
+                if (key.getValue() == event.mKeyValue) {
+                    MadKeyEventListener listener = key.getKey();
+                    if(event.mKeyState == event.MAD_KEY_UP){
+                        listener.onKeyUp(event.mKeyValue);
+                    }else if(event.mKeyState == event.MAD_KEY_DOWN){
+                        listener.onKeyDown(event.mKeyValue);
+                    }
+                }
+            }
+        }
+    }
     /*
      * State changes in the CTS line will be received here
      */
@@ -198,6 +242,8 @@ public class MadSensorService extends Service {
                         }
                     }
                 }
+
+                dispatchKeyEvent(MadPlatformDevice.getInstance().readKey());
             }
         }
     }
