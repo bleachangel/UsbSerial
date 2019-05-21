@@ -30,6 +30,7 @@ import java.io.File;
 import java.io.FilenameFilter;
 import java.lang.ref.WeakReference;
 import java.text.SimpleDateFormat;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.Set;
 
@@ -283,12 +284,23 @@ public class MainActivity extends AppCompatActivity implements MadSensorEventLis
                     mPlatformDevice.reset(0);
                 }*/
                 mPlatformDevice = MadPlatformDevice.getInstance();
-                byte[] vendor = mPlatformDevice.getVendor();
+                /*byte[] vendor = mPlatformDevice.getVendor();
                 if(vendor != null) {
-                    System.out.print("vendor: " + vendor.toString());
+                    Log.d(TAG, "vendor: " + new String(vendor));
                     String test = "TEST";
                     mPlatformDevice.setVendor(test.getBytes());
+                }*/
+
+                byte[] firmwareVersion = mPlatformDevice.getFirmwareVersion();
+                if(firmwareVersion != null) {
+                    System.out.print("vendor: " + firmwareVersion.toString());
                 }
+
+                /*int ret = mPlatformDevice.openLCD();
+                if(ret == 0) {
+                    System.out.print("open lcd success!");
+                    ret = mPlatformDevice.closeLCD();
+                }*/
 
                 //byte[] data = { (byte)0x01,   (byte)0x37,   (byte)0x05,   (byte)0x00,   (byte)0x20,   (byte)0x10,  (byte)0xb5,   (byte)0x06,   (byte)0x4c};
                 //int crc = calcSum(data, data.length);
@@ -450,7 +462,7 @@ public class MainActivity extends AppCompatActivity implements MadSensorEventLis
             long interCount = curCount - mPrevCount;
             if(interval >= 1000){
                 mSeconds ++;
-                if(mSeconds >= 30){
+                if(mSeconds >= 10){
                     mSeconds = 0;
 
                     //每30秒重新计算最大最小值
@@ -530,6 +542,8 @@ public class MainActivity extends AppCompatActivity implements MadSensorEventLis
                 case MadSensorService.MESSAGE_MAGNETIC:
                     MadSensorEvent mag = (MadSensorEvent)msg.obj;
                     String magStr = "( X: "+mag.values[0]+", Y: "+ mag.values[1] + ", Z: " + mag.values[2] + " )";
+                    long cost = timeStamp - mag.timestamp;
+                    Log.d(TAG, "#### mag time cost : " + cost + " ####");
                     mActivity.get().txtview_mag_value.setText(magStr);
                     break;
                 case MadSensorService.MESSAGE_ALS:

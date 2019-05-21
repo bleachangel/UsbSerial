@@ -265,10 +265,10 @@ public class BMI160 {
         return  true;
     }
 
-    public byte[] readAcc(MadSession session){
+    public byte[] readAcc(MadSession session, long curtime[]){
         byte[] status = null;
         int size = 6;
-        status = session.readI2CAsync(mChannel, mSlaveAddr, BMI160_USER_ACC_DATA_ADDR, MadSession.I2C_REGISTER_ADDR_MODE_8, size, MadSession.RESULT_TIME_OUT);
+        status = session.readI2CAsync(mChannel, mSlaveAddr, BMI160_USER_ACC_DATA_ADDR, MadSession.I2C_REGISTER_ADDR_MODE_8, size, MadSession.RESULT_TIME_OUT, curtime);
         if (status == null || status.length != size) {
             return null;
         }
@@ -276,10 +276,10 @@ public class BMI160 {
         return status;
     }
 
-    public byte[] readGy(MadSession session){
+    public byte[] readGy(MadSession session, long curtime[]){
         byte[] status = null;
         int size = 6;
-        status = session.readI2CAsync(mChannel, mSlaveAddr, BMI160_USER_GYR_DATA_ADDR, MadSession.I2C_REGISTER_ADDR_MODE_8, size, MadSession.RESULT_TIME_OUT);
+        status = session.readI2CAsync(mChannel, mSlaveAddr, BMI160_USER_GYR_DATA_ADDR, MadSession.I2C_REGISTER_ADDR_MODE_8, size, MadSession.RESULT_TIME_OUT, curtime);
         if (status == null || status.length != size) {
             return null;
         }

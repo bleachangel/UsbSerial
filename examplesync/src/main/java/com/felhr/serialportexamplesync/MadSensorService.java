@@ -227,7 +227,11 @@ public class MadSensorService extends Service {
 
         @Override
         public void run() {
+            long starttime = 0;
+            long endtime = 0;
+            long cost = 0;
             while (keep) {
+                starttime = System.currentTimeMillis();
                 synchronized (MadSensorManager.mSensorList) {
                     int sensorSize = MadSensorManager.mSensorList.size();
 
@@ -242,6 +246,9 @@ public class MadSensorService extends Service {
                         }
                     }
                 }
+                endtime = System.currentTimeMillis();
+                cost = endtime - starttime;
+                Log.d(TAG, "#### read & dispatch event time cost : "+ cost + " ####");
 
                 dispatchKeyEvent(MadPlatformDevice.getInstance().readKey());
             }

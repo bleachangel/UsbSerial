@@ -49,7 +49,7 @@ public class MadSession {
     public int mSessionID;
     public static final byte I2C_REGISTER_ADDR_MODE_8 = 1;
     public static final byte I2C_REGISTER_ADDR_MODE_16 = 2;
-    public static final int RESULT_TIME_OUT = 100;
+    public static final int RESULT_TIME_OUT = 50;
     public static final int ENQUEUE_TIME_OUT = 1;
     public static final int SYNC_WRITE_TIME_OUT = 0;
     public static final int I2R_RESULT_QUEUE_SIZE = 5;
@@ -705,7 +705,7 @@ public class MadSession {
         return  data;
     }
 
-    public byte[] readI2CAsync(byte channel, byte slaveAddr, int regAddr, byte regAddrMode, int size, long timeOut){
+    public byte[] readI2CAsync(byte channel, byte slaveAddr, int regAddr, byte regAddrMode, int size, long timeOut, long curtime[]){
         byte[] data = null;
         if (MadSessionManager.getInstance().isConnected()) {
             boolean find = false;
@@ -723,6 +723,7 @@ public class MadSession {
                                 && result.mRegAddr == regAddr) {
                             find = true;
                             data = result.mReadData;
+                            curtime[0] = System.currentTimeMillis();
                             break;
                         }
                     }

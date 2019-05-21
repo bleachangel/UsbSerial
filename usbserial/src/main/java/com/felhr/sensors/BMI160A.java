@@ -49,7 +49,8 @@ public class BMI160A extends MadSensor {
     }
 
     public MadSensorEvent read(){
-        byte[] status = BMI160.getInstance().readAcc(mSession);
+        long curtime[] = new long[1];
+        byte[] status = BMI160.getInstance().readAcc(mSession, curtime);
         if(status == null || status.length != 6){
             return null;
         }
@@ -72,6 +73,7 @@ public class BMI160A extends MadSensor {
         //z
         event.values[2] = (float)event.values[2]*GRAVITY_EARTH/mSensitivity;
 
+        event.timestamp = curtime[0];
         return event;
     }
 }

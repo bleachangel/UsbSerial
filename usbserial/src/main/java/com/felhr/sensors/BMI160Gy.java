@@ -52,7 +52,8 @@ public class BMI160Gy extends MadSensor {
     }
 
     public MadSensorEvent read(){
-        byte[] status = BMI160.getInstance().readGy(mSession);
+        long curtime[] = new long[1];
+        byte[] status = BMI160.getInstance().readGy(mSession, curtime);
         if(status == null || status.length != 6){
             return null;
         }
@@ -68,6 +69,7 @@ public class BMI160Gy extends MadSensor {
         //z
         event.values[2] = (float)((short)((status[0]&0xFF)|((status[1]<<8)&0xFF00)))/sensitivity/DEGREE_TO_RAD;
 
+        event.timestamp = curtime[0];
         return event;
     }
 }

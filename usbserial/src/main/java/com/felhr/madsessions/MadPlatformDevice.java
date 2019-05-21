@@ -2,6 +2,7 @@ package com.felhr.madsessions;
 
 public class MadPlatformDevice {
     public static final int DEFAULT_TIME_OUT = 100;
+    public static final int READ_KEY_TIME_OUT = 5;
     public MadSession mSession = null;
     private static MadPlatformDevice mInstance = null;
     private MadPlatformDevice(){
@@ -108,7 +109,7 @@ public class MadPlatformDevice {
     }
 
     public MadKeyEvent readKey(){
-        return mSession.readKey(DEFAULT_TIME_OUT);
+        return mSession.readKey(READ_KEY_TIME_OUT);
     }
 
     public int openLCD(){

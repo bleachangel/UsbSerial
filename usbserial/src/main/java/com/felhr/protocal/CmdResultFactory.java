@@ -120,15 +120,15 @@ public class CmdResultFactory {
             return null;
         }
 
-        if(cmdType.equalsIgnoreCase(CMD_SETUP_TAG)){
+        if(cmdType.equalsIgnoreCase(CMD_AUTO_REPORT_TAG)){
+            return  new ATRCmdResult(CMD_AUTO_REPORT_VALUE, para);
+        } else if(cmdType.equalsIgnoreCase(CMD_SETUP_TAG)){
             return new SetupCmdResult(CMD_SETUP_VALUE, para);
         } else if(cmdType.equalsIgnoreCase(CMD_TEST_TAG)){
         } else if(cmdType.equalsIgnoreCase(CMD_RESET_TAG)){
             return new ResetCmdResult(CMD_RESET_VALUE, para);
         } else if(cmdType.equalsIgnoreCase(CMD_I2C_READ_TAG)){
             return  new I2CReadCmdResult(CMD_I2C_READ_VALUE, para);
-        } else if(cmdType.equalsIgnoreCase(CMD_AUTO_REPORT_TAG)){
-            return  new ATRCmdResult(CMD_AUTO_REPORT_VALUE, para);
         } else if(cmdType.equalsIgnoreCase(CMD_I2C_WRITE_TAG)){
             return  new I2CWriteCmdResult(CMD_I2C_WRITE_VALUE, para);
         } else if(cmdType.equalsIgnoreCase(CMD_GPIO_READ_TAG)){

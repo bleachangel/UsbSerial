@@ -52,7 +52,8 @@ public class LTR579Als extends MadSensor {
     }
 
     public MadSensorEvent read(){
-        byte[] status = LTR579.getInstance().readAls(mSession);
+        long curtime[] = new long[1];
+        byte[] status = LTR579.getInstance().readAls(mSession, curtime);
         if(status == null || status.length != LTR579.ALS_DATA_SIZE){
             return null;
         }
@@ -76,6 +77,7 @@ public class LTR579Als extends MadSensor {
         }
 
         event.values[0] = value;
+        event.timestamp = curtime[0];
         return event;
     }
 }
