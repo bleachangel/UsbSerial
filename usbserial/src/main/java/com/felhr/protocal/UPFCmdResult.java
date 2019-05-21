@@ -21,7 +21,7 @@ public class UPFCmdResult extends ProtocalCmd {
             int crc = CRC16.calc(Arrays.copyOfRange(para, 1, mParaLen - 2));
             if(mCRC == crc) {
                 mSessionID = (int) (((para[2] << 8) & 0xFF00) | (para[1] & 0xFF));
-                //reset ret cmd para: len(1)+session_id(2)+result(1)+crc(2)+index(1)
+                //ret cmd para: len(1)+session_id(2)+result(1)+crc(2)+index(1)
                 mStatus = para[3];
             }
         } else {

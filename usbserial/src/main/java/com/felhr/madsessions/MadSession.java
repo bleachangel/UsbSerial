@@ -440,7 +440,7 @@ public class MadSession {
                         result = (ResetCmdResult)RSTQueue.poll(timeOut, TimeUnit.MILLISECONDS);
                         if (result != null) {
                             MadSessionManager.getInstance().statRecvCmd();
-                            if(result.mNo == deviceID) {
+                            if(result.mDeviceID == deviceID) {
                                 find = true;
                                 status = result.mStatus;
                             }

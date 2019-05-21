@@ -7,6 +7,7 @@ import java.util.Arrays;
 
 public class GLBCmdResult extends ProtocalCmd {
     public int mBrightness;
+    public int mStatus;
 
     public GLBCmdResult(int cmd, byte[] para){
         super();
@@ -21,8 +22,9 @@ public class GLBCmdResult extends ProtocalCmd {
             int crc = CRC16.calc(Arrays.copyOfRange(para, 1, mParaLen - 2));
             if(mCRC == crc) {
                 mSessionID = (int) (((para[2] << 8) & 0xFF00) | (para[1] & 0xFF));
-                //setup ret cmd para: len(1)+session_id(2)+status(1)+crc(2)
-                mBrightness = para[3];
+                //ret cmd para: len(1)+session_id(2)+result(1)+brightness(1)+crc(2)+index(1)
+                mStatus = para[3];
+                mBrightness = para[4];
             }
         } else {
             mValid = false;

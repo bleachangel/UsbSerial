@@ -20,6 +20,7 @@ public class OFLCmdResult extends ProtocalCmd {
             mCRC = ((para[mParaLen-1]<<8) & 0xFF00)| (para[mParaLen-2] &0xFF);
             int crc = CRC16.calc(Arrays.copyOfRange(para, 1, mParaLen - 2));
             if(mCRC == crc) {
+                //len(1)+session_id(2)+ret(1)+crc(2)+index(1)
                 mSessionID = (int) (((para[2] << 8) & 0xFF00) | (para[1] & 0xFF));
                 mStatus = para[3];
             }

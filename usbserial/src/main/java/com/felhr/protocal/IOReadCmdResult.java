@@ -23,10 +23,10 @@ public class IOReadCmdResult extends ProtocalCmd {
             int crc = CRC16.calc(Arrays.copyOfRange(para, 1, mParaLen - 2));
             if(mCRC == crc) {
                 mSessionID = (int) (((para[2] << 8) & 0xFF00) | (para[1] & 0xFF));
-                //io read ret cmd para: len(1)+session_id(2)+io(1)+dir(1)+level(1)+crc(2)
+                //io read ret cmd para: len(1)+session_id(2)+gpio no(2)+dir(1)+level(1)+crc(2)+index(1)
                 mNo = (int) para[3];
-                mDir = (int) para[4];
-                mLevel = (int) para[5];
+                mDir = (int) para[5];
+                mLevel = (int) para[6];
             }
         } else {
             mValid = false;

@@ -7,6 +7,7 @@ import java.util.Arrays;
 
 public class GMVCmdResult extends ProtocalCmd {
     public int mVol;
+    public int mStatus;
 
     public GMVCmdResult(int cmd, byte[] para){
         super();
@@ -21,8 +22,9 @@ public class GMVCmdResult extends ProtocalCmd {
             int crc = CRC16.calc(Arrays.copyOfRange(para, 1, mParaLen - 2));
             if(mCRC == crc) {
                 mSessionID = (int) (((para[2] << 8) & 0xFF00) | (para[1] & 0xFF));
-                //gpio write ret cmd para: len(1)+session_id(2)+io(1)+status(1)+crc(2)
-                mVol = (int) para[3];
+                //ret cmd para: len(1)+session_id(2)+ result(1) + vol(1) + crc(2) + index(1)
+                mStatus = (int) para[3];
+                mVol = (int) para[4];
             }
         } else {
             mValid = false;

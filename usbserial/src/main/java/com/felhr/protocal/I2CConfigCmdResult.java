@@ -26,7 +26,7 @@ public class I2CConfigCmdResult extends ProtocalCmd {
             int crc = CRC16.calc(Arrays.copyOfRange(para, 1, mParaLen - 2));
             if(mCRC == crc) {
                 mSessionID = (int) (((para[2] << 8) & 0xFF00) | (para[1] & 0xFF));
-                //I2C write ret cmd para: len(1)+session_id(2)+channel&addr bit(1)+slaveaddr(1)+regaddr(2)+status(1)+crc(2)
+                //ret cmd para: len(1)+session_id(2)+channel&addr bit(1)+slaveaddr(1)+regaddr(2)+status(1)+crc(2)
                 mChannel = (int) ((para[3] & 0xF0) >>> 4);
                 mAddrBit = (int) (para[3] & 0xF);
 

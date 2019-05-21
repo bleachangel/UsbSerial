@@ -6,7 +6,7 @@ import java.lang.reflect.Array;
 import java.util.Arrays;
 
 public class ResetCmdResult extends ProtocalCmd {
-    public int mNo;//000000 for all,
+    public int mDeviceID;//000000 for all,
     public int mStatus;
 
     public ResetCmdResult(int cmd, byte[] para){
@@ -22,8 +22,8 @@ public class ResetCmdResult extends ProtocalCmd {
             int crc = CRC16.calc(Arrays.copyOfRange(para, 1, mParaLen - 2));
             if(mCRC == crc) {
                 mSessionID = (int) (((para[2] << 8) & 0xFF00) | (para[1] & 0xFF));
-                //reset ret cmd para: len(1)+session_id(2)+device id(3)+result(1)+crc(2)
-                mNo = (int) ((para[5] << 16) | (para[4] << 8) | para[3]);
+                //ret cmd para: len(1)+session_id(2)+device id(3)+result(1)+crc(2)+index(1)
+                mDeviceID = (int) ((para[5] << 16) | (para[4] << 8) | para[3]);
                 mStatus = para[6];
             }
         } else {
