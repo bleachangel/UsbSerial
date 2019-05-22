@@ -59,6 +59,7 @@ public class BMI160 {
     private static final byte CMD_PMU_GYRO_NORMAL    = 0x15;
     private static final byte CMD_PMU_GYRO_FASTSTART = 0x17;
 
+    public static final long DEFAULT_READ_TIME_OUT = 5;
     public byte mChannel;
     public byte mSlaveAddr;
     public boolean mEnableAcc;
@@ -268,7 +269,7 @@ public class BMI160 {
     public byte[] readAcc(MadSession session, long curtime[]){
         byte[] status = null;
         int size = 6;
-        status = session.readI2CAsync(mChannel, mSlaveAddr, BMI160_USER_ACC_DATA_ADDR, MadSession.I2C_REGISTER_ADDR_MODE_8, size, MadSession.RESULT_TIME_OUT, curtime);
+        status = session.readI2CAsync(mChannel, mSlaveAddr, BMI160_USER_ACC_DATA_ADDR, MadSession.I2C_REGISTER_ADDR_MODE_8, size, DEFAULT_READ_TIME_OUT, curtime);
         if (status == null || status.length != size) {
             return null;
         }
@@ -279,7 +280,7 @@ public class BMI160 {
     public byte[] readGy(MadSession session, long curtime[]){
         byte[] status = null;
         int size = 6;
-        status = session.readI2CAsync(mChannel, mSlaveAddr, BMI160_USER_GYR_DATA_ADDR, MadSession.I2C_REGISTER_ADDR_MODE_8, size, MadSession.RESULT_TIME_OUT, curtime);
+        status = session.readI2CAsync(mChannel, mSlaveAddr, BMI160_USER_GYR_DATA_ADDR, MadSession.I2C_REGISTER_ADDR_MODE_8, size, DEFAULT_READ_TIME_OUT, curtime);
         if (status == null || status.length != size) {
             return null;
         }

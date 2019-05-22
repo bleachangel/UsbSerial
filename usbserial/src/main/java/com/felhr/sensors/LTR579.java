@@ -28,6 +28,7 @@ public class LTR579 {
     public boolean mEnablePs;
     public boolean mInited;
     private static LTR579 mInstance = null;
+    public static final long READ_ALSPS_TIME_OUT = 5;
 
     private LTR579(){
         mChannel = 0;
@@ -186,7 +187,7 @@ public class LTR579 {
     public byte[] readPs(MadSession session, long curtime[]){
         byte[] status = null;
         int size = PS_DATA_SIZE;
-        status = session.readI2CAsync(mChannel, mSlaveAddr, PS_DATA_START_ADDR, MadSession.I2C_REGISTER_ADDR_MODE_8, size, MadSession.RESULT_TIME_OUT, curtime);
+        status = session.readI2CAsync(mChannel, mSlaveAddr, PS_DATA_START_ADDR, MadSession.I2C_REGISTER_ADDR_MODE_8, size, READ_ALSPS_TIME_OUT, curtime);
         if (status == null || status.length != size) {
             return null;
         }
@@ -197,7 +198,7 @@ public class LTR579 {
     public byte[] readAls(MadSession session, long curtime[]){
         byte[] status = null;
         int size = ALS_DATA_SIZE;
-        status = session.readI2CAsync(mChannel, mSlaveAddr, ALS_DATA_START_ADDR, MadSession.I2C_REGISTER_ADDR_MODE_8, size, MadSession.RESULT_TIME_OUT,curtime);
+        status = session.readI2CAsync(mChannel, mSlaveAddr, ALS_DATA_START_ADDR, MadSession.I2C_REGISTER_ADDR_MODE_8, size, READ_ALSPS_TIME_OUT,curtime);
         if (status == null || status.length != size) {
             return null;
         }
