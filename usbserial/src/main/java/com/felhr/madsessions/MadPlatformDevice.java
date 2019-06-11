@@ -119,4 +119,12 @@ public class MadPlatformDevice {
     public int closeLCD(){
         return mSession.closeLCD(DEFAULT_TIME_OUT);
     }
+
+    public int switch3D(byte value){
+        return mSession.switch3D(value, DEFAULT_TIME_OUT);
+    }
+
+    public int get3DStatus(){
+        return mSession.get3DStatus(DEFAULT_TIME_OUT);
+    }
 }

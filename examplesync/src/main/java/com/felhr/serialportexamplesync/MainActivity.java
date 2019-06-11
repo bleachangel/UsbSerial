@@ -291,10 +291,13 @@ public class MainActivity extends AppCompatActivity implements MadSensorEventLis
                     mPlatformDevice.setVendor(test.getBytes());
                 }*/
 
-                byte[] firmwareVersion = mPlatformDevice.getFirmwareVersion();
+                /*byte[] firmwareVersion = mPlatformDevice.getFirmwareVersion();
                 if(firmwareVersion != null) {
                     System.out.print("vendor: " + firmwareVersion.toString());
-                }
+                }*/
+
+                int status = mPlatformDevice.switch3D((byte)1);
+                int n3DStatus = mPlatformDevice.get3DStatus();
 
                 /*int ret = mPlatformDevice.openLCD();
                 if(ret == 0) {

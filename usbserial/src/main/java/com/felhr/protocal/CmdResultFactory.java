@@ -34,6 +34,8 @@ public class CmdResultFactory {
     public static final String CMD_REPORT_KEY_VALUE_TAG = ":RKV";
     public static final String CMD_OPEN_LCD_TAG   = ":OPL";
     public static final String CMD_CLOSE_LCD_TAG   = ":CLL";
+    public static final String CMD_SWITCH_3D_TAG   = ":S3D";
+    public static final String CMD_GET_3D_TAG   = ":G3D";
     public static final String CMD_END_TAG   = ":END";
 
     public static final byte CMD_START_TAG = ':';
@@ -72,7 +74,9 @@ public class CmdResultFactory {
     public static final int CMD_REPORT_KEY_VALUE = 31;
     public static final int CMD_OPEN_LCD_VALUE   = 32;
     public static final int CMD_CLOSE_LCD_VALUE   = 33;
-    public static final int CMD_END_VALUE   = 34;
+    public static final int CMD_SWITCH_3D_VALUE   = 34;
+    public static final int CMD_GET_3D_VALUE   = 35;
+    public static final int CMD_END_VALUE   = 36;
     public static final int CMD_INVALID_VALUE    = -1;
 
     public static byte[] convert(byte[] chars){
@@ -185,6 +189,10 @@ public class CmdResultFactory {
             return  new OPLCmdResult(CMD_OPEN_LCD_VALUE, para);
         } else if(cmdType.equalsIgnoreCase(CMD_CLOSE_LCD_TAG)){
             return  new CLLCmdResult(CMD_CLOSE_LCD_VALUE, para);
+        } else if(cmdType.equalsIgnoreCase(CMD_SWITCH_3D_TAG)){
+            return  new S3DCmdResult(CMD_SWITCH_3D_VALUE, para);
+        } else if(cmdType.equalsIgnoreCase(CMD_GET_3D_TAG)){
+            return  new G3DCmdResult(CMD_GET_3D_VALUE, para);
         }
 
         return null;

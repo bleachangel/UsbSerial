@@ -8,6 +8,7 @@ import com.felhr.protocal.CFLCmdResult;
 import com.felhr.protocal.CLCCmdResult;
 import com.felhr.protocal.CLLCmdResult;
 import com.felhr.protocal.CmdResultFactory;
+import com.felhr.protocal.G3DCmdResult;
 import com.felhr.protocal.GDNCmdResult;
 import com.felhr.protocal.GFVCmdResult;
 import com.felhr.protocal.GHVCmdResult;
@@ -28,6 +29,7 @@ import com.felhr.protocal.OPLCmdResult;
 import com.felhr.protocal.ProtocalCmd;
 import com.felhr.protocal.RKVCmdResult;
 import com.felhr.protocal.ResetCmdResult;
+import com.felhr.protocal.S3DCmdResult;
 import com.felhr.protocal.SDNCmdResult;
 import com.felhr.protocal.SKFCmdResult;
 import com.felhr.protocal.SLBCmdResult;
@@ -89,6 +91,8 @@ public class MadSession {
     private BlockingQueue<RKVCmdResult> RKVQueue = new ArrayBlockingQueue<RKVCmdResult>(KEY_RESULT_QUEUE_SIZE);
     private BlockingQueue<OPLCmdResult> OPLQueue = new ArrayBlockingQueue<OPLCmdResult>(DEFAULT_RESULT_QUEUE_SIZE);
     private BlockingQueue<CLLCmdResult> CLLQueue = new ArrayBlockingQueue<CLLCmdResult>(DEFAULT_RESULT_QUEUE_SIZE);
+    private BlockingQueue<S3DCmdResult> S3DQueue = new ArrayBlockingQueue<S3DCmdResult>(DEFAULT_RESULT_QUEUE_SIZE);
+    private BlockingQueue<G3DCmdResult> G3DQueue = new ArrayBlockingQueue<G3DCmdResult>(DEFAULT_RESULT_QUEUE_SIZE);
 
     public int mProtocalVersion = 0x0001;
     public static final int DEFAULT_RETRY_TIMES = 3;
@@ -311,6 +315,20 @@ public class MadSession {
             case CmdResultFactory.CMD_CLOSE_LCD_VALUE:
                 try {
                     CLLQueue.offer((CLLCmdResult)cmd, ENQUEUE_TIME_OUT, TimeUnit.MILLISECONDS);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                break;
+            case CmdResultFactory.CMD_SWITCH_3D_VALUE:
+                try {
+                    S3DQueue.offer((S3DCmdResult)cmd, ENQUEUE_TIME_OUT, TimeUnit.MILLISECONDS);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                break;
+            case CmdResultFactory.CMD_GET_3D_VALUE:
+                try {
+                    G3DQueue.offer((G3DCmdResult)cmd, ENQUEUE_TIME_OUT, TimeUnit.MILLISECONDS);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
@@ -2093,6 +2111,109 @@ public class MadSession {
                             MadSessionManager.getInstance().statRecvCmd();
                             find = true;
                             status = result.mStatus;
+                            break;
+                        }
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+
+                    current = System.currentTimeMillis();
+                }
+            } while (retry > 0 && !find);
+        }
+        return  status;
+    }
+
+    //value : 0-2D, 1-3D
+    public int switch3D(byte value, long timeOut){
+        //byte[] paraStr = null;
+        byte[] para = new byte[7];
+        int status = 0;
+
+        //session id
+        para[1] = (byte)(mSessionID &0xFF);
+        para[2] = (byte)((mSessionID >>>8)&0xFF);
+
+        para[3] = (byte)value;
+
+        //para len
+        para[0] = (byte)6;
+
+        //crc
+        int crc = CRC16.calc(Arrays.copyOfRange(para, 1, 4));
+
+        para[4] = (byte)(crc &0xFF);
+        para[5] = (byte)((crc>>>8)&0xFF);
+
+        para[6] = (byte)(findStartTag(para, para[0]) & 0xFF);
+        byte[] assemble = assembleCmd(CmdResultFactory.CMD_SWITCH_3D_TAG, para);
+        if (MadSessionManager.getInstance().isConnected()) {
+            int retry = DEFAULT_RETRY_TIMES;
+            boolean find = false;
+            do {
+                retry--;
+                MadSessionManager.getInstance().statSendCmd(assemble.length);
+                MadSessionManager.getInstance().getSerialDevice().syncWrite(assemble, SYNC_WRITE_TIME_OUT);
+                S3DCmdResult result = null;
+                long current = System.currentTimeMillis();
+                long quit = current + timeOut;
+                while (current < quit) {
+                    try {
+                        result = (S3DCmdResult) S3DQueue.poll(timeOut, TimeUnit.MILLISECONDS);
+                        if (result != null) {
+                            MadSessionManager.getInstance().statRecvCmd();
+                            find = true;
+                            status = result.mStatus;
+                            break;
+                        }
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+
+                    current = System.currentTimeMillis();
+                }
+            } while (retry > 0 && !find);
+        }
+        return  status;
+    }
+
+    public int get3DStatus(long timeOut){
+        //byte[] paraStr = null;
+        byte[] para = new byte[6];
+        int status = 0;
+
+        //session id
+        para[1] = (byte)(mSessionID &0xFF);
+        para[2] = (byte)((mSessionID >>>8)&0xFF);
+
+        //para len
+        para[0] = (byte)5;
+
+        //crc
+        int crc = CRC16.calc(Arrays.copyOfRange(para, 1, 3));
+
+        para[3] = (byte)(crc &0xFF);
+        para[4] = (byte)((crc >>>8) & 0xFF);
+
+        para[5] = (byte)(findStartTag(para, para[0]) & 0xFF);
+        byte[] assemble = assembleCmd(CmdResultFactory.CMD_GET_3D_TAG, para);
+        if (MadSessionManager.getInstance().isConnected()) {
+            int retry = DEFAULT_RETRY_TIMES;
+            boolean find = false;
+            do {
+                retry--;
+                MadSessionManager.getInstance().statSendCmd(assemble.length);
+                MadSessionManager.getInstance().getSerialDevice().syncWrite(assemble, SYNC_WRITE_TIME_OUT);
+                G3DCmdResult result = null;
+                long current = System.currentTimeMillis();
+                long quit = current + timeOut;
+                while (current < quit) {
+                    try {
+                        result = (G3DCmdResult) G3DQueue.poll(timeOut, TimeUnit.MILLISECONDS);
+                        if (result != null) {
+                            MadSessionManager.getInstance().statRecvCmd();
+                            find = true;
+                            status = result.m3D;
                             break;
                         }
                     } catch (InterruptedException e) {
