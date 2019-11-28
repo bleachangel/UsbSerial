@@ -22,6 +22,10 @@ public abstract class ProtocalCmd {
         return  mSessionID;
     }
 
+    public boolean isCalcCRC(){
+        return mCRC == 0 ? false:true;
+    }
+
     public int getCRC(){
         return mCRC;
     }

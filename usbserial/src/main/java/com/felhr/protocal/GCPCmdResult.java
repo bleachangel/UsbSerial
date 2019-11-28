@@ -5,9 +5,11 @@ import com.felhr.utils.CRC16;
 import java.lang.reflect.Array;
 import java.util.Arrays;
 
-public class SetupCmdResult extends ProtocalCmd {
-    public int mStatus;
-    public SetupCmdResult(int cmd, byte[] para){
+public class GCPCmdResult extends ProtocalCmd {
+    public long mCapacity;
+
+    //len(1)+session_id(2)+ capacity(4)+ crc(2)+index(1)
+    public GCPCmdResult(int cmd, byte[] para){
         super();
         mCmdValue = cmd;
         mParaLen = (int)para[0];
@@ -23,8 +25,7 @@ public class SetupCmdResult extends ProtocalCmd {
             }
             if(mCRC == crc) {
                 mSessionID = (int) (((para[2] << 8) & 0xFF00) | (para[1] & 0xFF));
-                //setup ret cmd para: len(1)+session_id(2)+status(1)+crc(2)
-                mStatus = para[3];
+                mCapacity = para[6] | ((para[5] << 8) & 0xFF00) | ((para[4] << 16) & 0xFF0000) | ((para[3] << 24) & 0xFF000000);
             }
         } else {
             mValid = false;

@@ -1,6 +1,7 @@
 package com.felhr.sensors;
 
 import com.felhr.madsessions.MadSession;
+import com.felhr.madsessions.MadSessionManager;
 
 public abstract class MadSensor {
     public int mSensorType;
@@ -9,13 +10,15 @@ public abstract class MadSensor {
     public boolean mEnable;
     public boolean mInited;
     public long mTimeOut; //unit is us.
-    public MadSession mSession = new MadSession();
+    public MadSession mSession;
 
-    public MadSensor(){
+    public MadSensor(long capacity){
         mChannel = 0;
         mSlaveAddr = 0;
         mEnable = false;
         mTimeOut = 0;
+
+        mSession = MadSessionManager.getInstance().createSession(capacity);
     }
 
     public boolean isEnabled(){
@@ -24,6 +27,10 @@ public abstract class MadSensor {
 
     public boolean isInited(){
         return mInited;
+    }
+
+    public int release(){
+        return MadSessionManager.getInstance().releaseSession(mSession.mSessionID);
     }
 
     public abstract boolean init();

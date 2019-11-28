@@ -1,6 +1,7 @@
 package com.felhr.sensors;
 
-import com.felhr.madsessions.MadSession;
+import com.felhr.madsessions.MadConnectionManager;
+import com.felhr.madsessions.MadDeviceConnection;
 
 public class BMI160Gy extends MadSensor {
     /*
@@ -8,9 +9,9 @@ public class BMI160Gy extends MadSensor {
      *1 degree = rad*180/PI, about rad*180/3.1416
      */
     public static final int DEGREE_TO_RAD=57;
-
+    static long mCapacity = MadConnectionManager.getDeviceCapacity()|MadDeviceConnection.CAPACITY_GYROSCOPE_MASK;
     public BMI160Gy(){
-        super();
+        super(mCapacity);
         mInited = false;
         mChannel = BMI160.getInstance().mChannel;
         mSlaveAddr = BMI160.getInstance().mSlaveAddr;

@@ -18,7 +18,10 @@ public class CLLCmdResult extends ProtocalCmd {
                 para[index] -= 1;
             }
             mCRC = ((para[mParaLen-1]<<8) & 0xFF00)| (para[mParaLen-2] &0xFF);
-            int crc = CRC16.calc(Arrays.copyOfRange(para, 1, mParaLen - 2));
+            int crc = 0;
+            if(isCalcCRC()) {
+                crc = CRC16.calc(Arrays.copyOfRange(para, 1, mParaLen - 2));
+            }
             if(mCRC == crc) {
                 mSessionID = (int) (((para[2] << 8) & 0xFF00) | (para[1] & 0xFF));
                 //ret cmd para: len(1)+session_id(2)+result(1)+crc(2)+index(1)

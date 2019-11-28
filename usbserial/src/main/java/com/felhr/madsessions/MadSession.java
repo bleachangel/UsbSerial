@@ -1,14 +1,12 @@
 package com.felhr.madsessions;
 
-import android.hardware.usb.UsbDevice;
-import android.hardware.usb.UsbDeviceConnection;
-
 import com.felhr.protocal.ATRCmdResult;
 import com.felhr.protocal.CFLCmdResult;
 import com.felhr.protocal.CLCCmdResult;
 import com.felhr.protocal.CLLCmdResult;
 import com.felhr.protocal.CmdResultFactory;
 import com.felhr.protocal.G3DCmdResult;
+import com.felhr.protocal.GCPCmdResult;
 import com.felhr.protocal.GDNCmdResult;
 import com.felhr.protocal.GFVCmdResult;
 import com.felhr.protocal.GHVCmdResult;
@@ -39,7 +37,6 @@ import com.felhr.protocal.SVDCmdResult;
 import com.felhr.protocal.SVLCmdResult;
 import com.felhr.protocal.SetupCmdResult;
 import com.felhr.protocal.UPFCmdResult;
-import com.felhr.utils.ByteOps;
 import com.felhr.utils.CRC16;
 
 import java.util.Arrays;
@@ -62,6 +59,7 @@ public class MadSession {
     private BlockingQueue<SetupCmdResult> STPQueue = new ArrayBlockingQueue<SetupCmdResult>(DEFAULT_RESULT_QUEUE_SIZE);
     private BlockingQueue<I2CReadCmdResult> I2RQueue = new ArrayBlockingQueue<I2CReadCmdResult>(I2R_RESULT_QUEUE_SIZE);
     private BlockingQueue<ATRCmdResult> ATRQueue = new ArrayBlockingQueue<ATRCmdResult>(AUTO_REPEAT_QUEUE_SIZE);
+    private BlockingQueue<GCPCmdResult> GCPQueue = new ArrayBlockingQueue<GCPCmdResult>(DEFAULT_RESULT_QUEUE_SIZE);
     private BlockingQueue<I2CWriteCmdResult> I2WQueue = new ArrayBlockingQueue<I2CWriteCmdResult>(I2W_RESULT_QUEUE_SIZE);
     private BlockingQueue<I2CConfigCmdResult> I2CQueue = new ArrayBlockingQueue<I2CConfigCmdResult>(DEFAULT_RESULT_QUEUE_SIZE);
     private BlockingQueue<IOWriteCmdResult> IOWQueue = new ArrayBlockingQueue<IOWriteCmdResult>(DEFAULT_RESULT_QUEUE_SIZE);
@@ -97,10 +95,59 @@ public class MadSession {
     public int mProtocalVersion = 0x0001;
     public static final int DEFAULT_RETRY_TIMES = 3;
 
-    public MadSession(){
-        mSessionID = MadSessionManager.getInstance().newID();
-        MadSessionManager.getInstance().registerSession(mSessionID, this);
+    //完成session的功能，需要用到哪些设备能力，根据设备能力找到相应的设备连接。
+    //如果存在多个相同能力的设备连接，则优先选择最先连接的设备。同时，提供接口供上层切换连接的设备。
+    private long mCapacity;
+
+    private MadConnectionCallback mCallback;
+    private MadDeviceConnection mConnection;
+
+    public MadSession(int session, long capacity){
+        mSessionID = session;
+        mCapacity = capacity;
+        mConnection = null;
+
+        mCallback = new MadConnectionCallback() {
+            @Override
+            public void onReceivedData(ProtocalCmd cmd) {
+                if(cmd != null) {
+                    appendCmdResult(cmd);
+                }
+            }
+            @Override
+            public void onReceivedDataForTest(byte[] data) {
+            }
+        };
     }
+
+    public long getSessionCapacity(){
+        return mCapacity;
+    }
+
+    public int getDeviceType(){
+        int deviceType = MadDeviceConnection.DEVICE_TYPE_UNKNOWN;
+        if((mCapacity & MadDeviceConnection.CAPACITY_DEVICE_MASK) != 0){
+            deviceType = MadDeviceConnection.DEVICE_TYPE_DEVICE;
+        } else if ((mCapacity & MadDeviceConnection.CAPACITY_DONGLE_MASK) != 0){
+            deviceType = MadDeviceConnection.DEVICE_TYPE_DONGLE;
+        }
+        return deviceType;
+    }
+
+    public MadConnectionCallback getCallback(){
+        return mCallback;
+    }
+
+    public int setConnection(MadDeviceConnection connection){
+        int ret = 0;
+        mConnection = connection;
+        return ret;
+    }
+
+    public MadDeviceConnection getConnection(){
+        return mConnection;
+    }
+
     /*
     public boolean connect(UsbDevice device, UsbDeviceConnection connection){
         return MadSessionManager.getInstance().connect(device, connection);
@@ -119,6 +166,13 @@ public class MadSession {
             case CmdResultFactory.CMD_RESET_VALUE:
                 try {
                     RSTQueue.offer((ResetCmdResult)cmd, ENQUEUE_TIME_OUT, TimeUnit.MILLISECONDS);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                break;
+            case CmdResultFactory.CMD_GET_CAPACITY_VALUE:
+                try {
+                    GCPQueue.offer((GCPCmdResult)cmd, ENQUEUE_TIME_OUT, TimeUnit.MILLISECONDS);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
@@ -388,13 +442,13 @@ public class MadSession {
 
         //paraStr = ByteOps.byteArrayToHexStr(para);
         byte[] assemble = assembleCmd(CmdResultFactory.CMD_SETUP_TAG, para);
-        if (MadSessionManager.getInstance().isConnected()) {
+        if (mConnection != null) {
             int retry = DEFAULT_RETRY_TIMES;
             boolean find = false;
             do {
                 retry--;
                 MadSessionManager.getInstance().statSendCmd(assemble.length);
-                MadSessionManager.getInstance().getSerialDevice().syncWrite(assemble, SYNC_WRITE_TIME_OUT);
+                mConnection.syncWrite(assemble, SYNC_WRITE_TIME_OUT);
                 SetupCmdResult result = null;
                 long current = System.currentTimeMillis();
                 long quit = current + timeOut;
@@ -443,13 +497,13 @@ public class MadSession {
 
         //paraStr = ByteOps.byteArrayToHexStr(para);
         byte[] assemble = assembleCmd(CmdResultFactory.CMD_RESET_TAG, para);
-        if (MadSessionManager.getInstance().isConnected()) {
+        if (mConnection != null) {
             int retry = DEFAULT_RETRY_TIMES;
             boolean find = false;
             do {
                 retry--;
                 MadSessionManager.getInstance().statSendCmd(assemble.length);
-                MadSessionManager.getInstance().getSerialDevice().syncWrite(assemble, SYNC_WRITE_TIME_OUT);
+                mConnection.syncWrite(assemble, SYNC_WRITE_TIME_OUT);
                 ResetCmdResult result = null;
                 long current = System.currentTimeMillis();
                 long quit = current + timeOut;
@@ -473,6 +527,58 @@ public class MadSession {
             } while (retry > 0 && !find);
         }
         return  status;
+    }
+
+    public long getCapacity(long timeOut){
+        long capacity = 0;
+
+        //byte[] paraStr = null;
+        int dataLen = 6;
+        byte[] para = new byte[dataLen];
+
+        //session id
+        para[1] = (byte)(mSessionID &0xFF);
+        para[2] = (byte)((mSessionID >>>8) & 0xFF);
+
+        //para len
+        para[0] = 5;
+
+        //crc
+        int crc = CRC16.calc(Arrays.copyOfRange(para, 1, 3));
+
+        para[3] = (byte)(crc &0xFF);
+        para[4] = (byte)((crc >>>8)&0xFF);
+        para[5] = (byte)(findStartTag(para, para[0]) & 0xFF);
+        byte[] assemble = assembleCmd(CmdResultFactory.CMD_GET_CAPACITY_TAG, para);
+        if (mConnection != null) {
+            int retry = DEFAULT_RETRY_TIMES;
+            boolean find = false;
+            do {
+                retry--;
+                MadSessionManager.getInstance().statSendCmd(assemble.length);
+                mConnection.syncWrite(assemble, SYNC_WRITE_TIME_OUT);
+                GCPCmdResult result = null;
+                long current = System.currentTimeMillis();
+                long quit = current + timeOut;
+                while (current < quit) {
+                    try {
+                        result = (GCPCmdResult) GCPQueue.poll(timeOut, TimeUnit.MILLISECONDS);
+                        if (result != null) {
+                            MadSessionManager.getInstance().statRecvCmd();
+                            capacity = result.mCapacity;
+                            find = true;
+                            break;
+                        }
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+
+                    current = System.currentTimeMillis();
+                }
+            } while(retry > 0 && !find);
+        }
+
+        return  capacity;
     }
 
     public int configI2C(byte channel, byte slaveAddr, int regAddr, int enAddr, int enValue, int delayms, byte regAddrMode, byte mode, byte size, long timeOut){
@@ -527,13 +633,13 @@ public class MadSession {
 
         //paraStr = ByteOps.byteArrayToHexStr(para);
         byte[] assemble = assembleCmd(CmdResultFactory.CMD_I2C_CONFIG_TAG, para);
-        if (MadSessionManager.getInstance().isConnected()) {
+        if (mConnection != null) {
             int retry = DEFAULT_RETRY_TIMES;
             boolean find = false;
             do{
                 retry--;
                 MadSessionManager.getInstance().statSendCmd(assemble.length);
-                MadSessionManager.getInstance().getSerialDevice().syncWrite(assemble, SYNC_WRITE_TIME_OUT);
+                mConnection.syncWrite(assemble, SYNC_WRITE_TIME_OUT);
                 I2CConfigCmdResult result = null;
                 long current = System.currentTimeMillis();
                 long quit = current + timeOut;
@@ -606,13 +712,13 @@ public class MadSession {
             //paraStr = ByteOps.byteArrayToHexStr(para);
             //String assemble = CmdResultFactory.CMD_I2C_WRITE_TAG+paraStr.toString()+CmdResultFactory.CMD_END_TAG;
             byte[] assemble = assembleCmd(CmdResultFactory.CMD_I2C_WRITE_TAG, para);
-            if (MadSessionManager.getInstance().isConnected()) {
+            if (mConnection != null) {
                 int retry = DEFAULT_RETRY_TIMES;
                 boolean find = false;
                 do {
                     retry--;
                     MadSessionManager.getInstance().statSendCmd(assemble.length);
-                    MadSessionManager.getInstance().getSerialDevice().syncWrite(assemble, SYNC_WRITE_TIME_OUT);
+                    mConnection.syncWrite(assemble, SYNC_WRITE_TIME_OUT);
                     try {
                         Thread.sleep(1);
                     } catch (InterruptedException e) {
@@ -687,13 +793,13 @@ public class MadSession {
             //paraStr = ByteOps.byteArrayToHexStr(para);
             //String assemble = CmdResultFactory.CMD_I2C_READ_TAG+para.toString()+CmdResultFactory.CMD_END_TAG;
             byte[] assemble = assembleCmd(CmdResultFactory.CMD_I2C_READ_TAG, para);
-            if (MadSessionManager.getInstance().isConnected()) {
+            if (mConnection != null) {
                 int retry = DEFAULT_RETRY_TIMES;
                 boolean find = false;
                 do {
                     retry--;
                     MadSessionManager.getInstance().statSendCmd(assemble.length);
-                    MadSessionManager.getInstance().getSerialDevice().syncWrite(assemble, SYNC_WRITE_TIME_OUT);
+                    mConnection.syncWrite(assemble, SYNC_WRITE_TIME_OUT);
                     I2CReadCmdResult result = null;
                     long current = System.currentTimeMillis();
                     long quit = current + timeOut;
@@ -725,7 +831,7 @@ public class MadSession {
 
     public byte[] readI2CAsync(byte channel, byte slaveAddr, int regAddr, byte regAddrMode, int size, long timeOut, long curtime[]){
         byte[] data = null;
-        if (MadSessionManager.getInstance().isConnected()) {
+        if (mConnection != null) {
             boolean find = false;
             ATRCmdResult result = null;
             long current = System.currentTimeMillis();
@@ -784,13 +890,13 @@ public class MadSession {
         para[9] = (byte)(findStartTag(para, para[0]) & 0xFF);
         //paraStr = ByteOps.byteArrayToHexStr(para);
         byte[] assemble = assembleCmd(CmdResultFactory.CMD_GPIO_WRITE_TAG, para);//CmdResultFactory.CMD_GPIO_WRITE_TAG+paraStr.toString()+CmdResultFactory.CMD_END_TAG;
-        if (MadSessionManager.getInstance().isConnected()) {
+        if (mConnection != null) {
             int retry = DEFAULT_RETRY_TIMES;
             boolean find = false;
             do {
                 retry--;
                 MadSessionManager.getInstance().statSendCmd(assemble.length);
-                MadSessionManager.getInstance().getSerialDevice().syncWrite(assemble, SYNC_WRITE_TIME_OUT);
+                mConnection.syncWrite(assemble, SYNC_WRITE_TIME_OUT);
 
                 IOWriteCmdResult result = null;
                 long current = System.currentTimeMillis();
@@ -843,13 +949,13 @@ public class MadSession {
         //paraStr = ByteOps.byteArrayToHexStr(para);
         //String assemble = CmdResultFactory.CMD_GPIO_READ_TAG+paraStr.toString()+CmdResultFactory.CMD_END_TAG;
         byte[] assemble = assembleCmd(CmdResultFactory.CMD_GPIO_READ_TAG, para);
-        if (MadSessionManager.getInstance().isConnected()) {
+        if (mConnection != null) {
             int retry = DEFAULT_RETRY_TIMES;
             boolean find = false;
             do {
                 retry--;
                 MadSessionManager.getInstance().statSendCmd(assemble.length);
-                MadSessionManager.getInstance().getSerialDevice().syncWrite(assemble, SYNC_WRITE_TIME_OUT);
+                mConnection.syncWrite(assemble, SYNC_WRITE_TIME_OUT);
                 IOReadCmdResult result = null;
                 long current = System.currentTimeMillis();
                 long quit = current + timeOut;
@@ -872,11 +978,6 @@ public class MadSession {
             } while (retry > 0 && !find);
         }
         return  status;
-    }
-
-    public boolean close(){
-        MadSessionManager.getInstance().unregisterSession(mSessionID);
-        return MadSessionManager.getInstance().deleteID(mSessionID);
     }
 
     public int setVol(byte vol, long timeOut){
@@ -902,13 +1003,13 @@ public class MadSession {
         para[6] = (byte)(findStartTag(para, para[0]) & 0xFF);
         //paraStr = ByteOps.byteArrayToHexStr(para);
         byte[] assemble = assembleCmd(CmdResultFactory.CMD_SET_VOL_TAG, para);
-        if (MadSessionManager.getInstance().isConnected()) {
+        if (mConnection != null) {
             int retry = DEFAULT_RETRY_TIMES;
             boolean find = false;
             do {
                 retry--;
                 MadSessionManager.getInstance().statSendCmd(assemble.length);
-                MadSessionManager.getInstance().getSerialDevice().syncWrite(assemble, SYNC_WRITE_TIME_OUT);
+                mConnection.syncWrite(assemble, SYNC_WRITE_TIME_OUT);
                 SVLCmdResult result = null;
                 long current = System.currentTimeMillis();
                 long quit = current + timeOut;
@@ -953,13 +1054,13 @@ public class MadSession {
         para[5] = (byte)(findStartTag(para, para[0]) & 0xFF);
         //paraStr = ByteOps.byteArrayToHexStr(para);
         byte[] assemble = assembleCmd(CmdResultFactory.CMD_GET_VOL_TAG, para);
-        if (MadSessionManager.getInstance().isConnected()) {
+        if (mConnection != null) {
             int retry = DEFAULT_RETRY_TIMES;
             boolean find = false;
             do {
                 retry--;
                 MadSessionManager.getInstance().statSendCmd(assemble.length);
-                MadSessionManager.getInstance().getSerialDevice().syncWrite(assemble, SYNC_WRITE_TIME_OUT);
+                mConnection.syncWrite(assemble, SYNC_WRITE_TIME_OUT);
                 GVLCmdResult result = null;
                 long current = System.currentTimeMillis();
                 long quit = current + timeOut;
@@ -1006,13 +1107,13 @@ public class MadSession {
         para[6] = (byte)(findStartTag(para, para[0]) & 0xFF);
         //paraStr = ByteOps.byteArrayToHexStr(para);
         byte[] assemble = assembleCmd(CmdResultFactory.CMD_SET_LCD_BRIGHT_TAG, para);
-        if (MadSessionManager.getInstance().isConnected()) {
+        if (mConnection != null) {
             int retry = DEFAULT_RETRY_TIMES;
             boolean find = false;
             do {
                 retry--;
                 MadSessionManager.getInstance().statSendCmd(assemble.length);
-                MadSessionManager.getInstance().getSerialDevice().syncWrite(assemble, SYNC_WRITE_TIME_OUT);
+                mConnection.syncWrite(assemble, SYNC_WRITE_TIME_OUT);
                 SLBCmdResult result = null;
                 long current = System.currentTimeMillis();
                 long quit = current + timeOut;
@@ -1057,13 +1158,13 @@ public class MadSession {
         para[5] = (byte)(findStartTag(para, para[0]) & 0xFF);
         //paraStr = ByteOps.byteArrayToHexStr(para);
         byte[] assemble = assembleCmd(CmdResultFactory.CMD_GET_LCD_BRIGHT_TAG, para);
-        if (MadSessionManager.getInstance().isConnected()) {
+        if (mConnection != null) {
             int retry = DEFAULT_RETRY_TIMES;
             boolean find = false;
             do {
                 retry--;
                 MadSessionManager.getInstance().statSendCmd(assemble.length);
-                MadSessionManager.getInstance().getSerialDevice().syncWrite(assemble, SYNC_WRITE_TIME_OUT);
+                mConnection.syncWrite(assemble, SYNC_WRITE_TIME_OUT);
                 GLBCmdResult result = null;
                 long current = System.currentTimeMillis();
                 long quit = current + timeOut;
@@ -1110,13 +1211,13 @@ public class MadSession {
         para[6] = (byte)(findStartTag(para, para[0]) & 0xFF);
         //paraStr = ByteOps.byteArrayToHexStr(para);
         byte[] assemble = assembleCmd(CmdResultFactory.CMD_OPEN_CAMERA_TAG, para);
-        if (MadSessionManager.getInstance().isConnected()) {
+        if (mConnection != null) {
             int retry = DEFAULT_RETRY_TIMES;
             boolean find = false;
             do {
                 retry--;
                 MadSessionManager.getInstance().statSendCmd(assemble.length);
-                MadSessionManager.getInstance().getSerialDevice().syncWrite(assemble, SYNC_WRITE_TIME_OUT);
+                mConnection.syncWrite(assemble, SYNC_WRITE_TIME_OUT);
                 OPCCmdResult result = null;
                 long current = System.currentTimeMillis();
                 long quit = current + timeOut;
@@ -1162,13 +1263,13 @@ public class MadSession {
         para[6] = (byte)(findStartTag(para, para[0]) & 0xFF);
         //paraStr = ByteOps.byteArrayToHexStr(para);
         byte[] assemble = assembleCmd(CmdResultFactory.CMD_CLOSE_CAMERA_TAG, para);
-        if (MadSessionManager.getInstance().isConnected()) {
+        if (mConnection != null) {
             int retry = DEFAULT_RETRY_TIMES;
             boolean find = false;
             do {
                 retry--;
                 MadSessionManager.getInstance().statSendCmd(assemble.length);
-                MadSessionManager.getInstance().getSerialDevice().syncWrite(assemble, SYNC_WRITE_TIME_OUT);
+                mConnection.syncWrite(assemble, SYNC_WRITE_TIME_OUT);
                 CLCCmdResult result = null;
                 long current = System.currentTimeMillis();
                 long quit = current + timeOut;
@@ -1215,13 +1316,13 @@ public class MadSession {
         para[6] = (byte)(findStartTag(para, para[0]) & 0xFF);
         //paraStr = ByteOps.byteArrayToHexStr(para);
         byte[] assemble = assembleCmd(CmdResultFactory.CMD_OPEN_FLASH_LIGHT_TAG, para);
-        if (MadSessionManager.getInstance().isConnected()) {
+        if (mConnection != null) {
             int retry = DEFAULT_RETRY_TIMES;
             boolean find = false;
             do {
                 retry--;
                 MadSessionManager.getInstance().statSendCmd(assemble.length);
-                MadSessionManager.getInstance().getSerialDevice().syncWrite(assemble, SYNC_WRITE_TIME_OUT);
+                mConnection.syncWrite(assemble, SYNC_WRITE_TIME_OUT);
                 OFLCmdResult result = null;
                 long current = System.currentTimeMillis();
                 long quit = current + timeOut;
@@ -1267,13 +1368,13 @@ public class MadSession {
         para[6] = (byte)(findStartTag(para, para[0]) & 0xFF);
         //paraStr = ByteOps.byteArrayToHexStr(para);
         byte[] assemble = assembleCmd(CmdResultFactory.CMD_CLOSE_FLASH_LIGHT_TAG, para);
-        if (MadSessionManager.getInstance().isConnected()) {
+        if (mConnection != null) {
             int retry = DEFAULT_RETRY_TIMES;
             boolean find = false;
             do {
                 retry--;
                 MadSessionManager.getInstance().statSendCmd(assemble.length);
-                MadSessionManager.getInstance().getSerialDevice().syncWrite(assemble, SYNC_WRITE_TIME_OUT);
+                mConnection.syncWrite(assemble, SYNC_WRITE_TIME_OUT);
                 CFLCmdResult result = null;
                 long current = System.currentTimeMillis();
                 long quit = current + timeOut;
@@ -1320,13 +1421,13 @@ public class MadSession {
         para[6] = (byte)(findStartTag(para, para[0]) & 0xFF);
         //paraStr = ByteOps.byteArrayToHexStr(para);
         byte[] assemble = assembleCmd(CmdResultFactory.CMD_SET_MIC_VOL_TAG, para);
-        if (MadSessionManager.getInstance().isConnected()) {
+        if (mConnection != null) {
             int retry = DEFAULT_RETRY_TIMES;
             boolean find = false;
             do {
                 retry--;
                 MadSessionManager.getInstance().statSendCmd(assemble.length);
-                MadSessionManager.getInstance().getSerialDevice().syncWrite(assemble, SYNC_WRITE_TIME_OUT);
+                mConnection.syncWrite(assemble, SYNC_WRITE_TIME_OUT);
                 SMVCmdResult result = null;
                 long current = System.currentTimeMillis();
                 long quit = current + timeOut;
@@ -1371,13 +1472,13 @@ public class MadSession {
         para[5] = (byte)(findStartTag(para, para[0]) & 0xFF);
         //paraStr = ByteOps.byteArrayToHexStr(para);
         byte[] assemble = assembleCmd(CmdResultFactory.CMD_GET_MIC_VOL_TAG, para);
-        if (MadSessionManager.getInstance().isConnected()) {
+        if (mConnection != null) {
             int retry = DEFAULT_RETRY_TIMES;
             boolean find = false;
             do {
                 retry--;
                 MadSessionManager.getInstance().statSendCmd(assemble.length);
-                MadSessionManager.getInstance().getSerialDevice().syncWrite(assemble, SYNC_WRITE_TIME_OUT);
+                mConnection.syncWrite(assemble, SYNC_WRITE_TIME_OUT);
                 GMVCmdResult result = null;
                 long current = System.currentTimeMillis();
                 long quit = current + timeOut;
@@ -1421,13 +1522,13 @@ public class MadSession {
         para[5] = (byte)(findStartTag(para, para[0]) & 0xFF);
 
         byte[] assemble = assembleCmd(CmdResultFactory.CMD_UPGRADE_FIRMWARE_TAG, para);
-        if (MadSessionManager.getInstance().isConnected()) {
+        if (mConnection != null) {
             int retry = DEFAULT_RETRY_TIMES;
             boolean find = false;
             do {
                 retry--;
                 MadSessionManager.getInstance().statSendCmd(assemble.length);
-                MadSessionManager.getInstance().getSerialDevice().syncWrite(assemble, SYNC_WRITE_TIME_OUT);
+                mConnection.syncWrite(assemble, SYNC_WRITE_TIME_OUT);
                 UPFCmdResult result = null;
                 long current = System.currentTimeMillis();
                 long quit = current + timeOut;
@@ -1473,13 +1574,13 @@ public class MadSession {
         para[5] = (byte)(findStartTag(para, para[0]) & 0xFF);
 
         byte[] assemble = assembleCmd(CmdResultFactory.CMD_GET_HARDWARE_VERSION_TAG, para);
-        if (MadSessionManager.getInstance().isConnected()) {
+        if (mConnection != null) {
             int retry = DEFAULT_RETRY_TIMES;
             boolean find = false;
             do {
                 retry--;
                 MadSessionManager.getInstance().statSendCmd(assemble.length);
-                MadSessionManager.getInstance().getSerialDevice().syncWrite(assemble, SYNC_WRITE_TIME_OUT);
+                mConnection.syncWrite(assemble, SYNC_WRITE_TIME_OUT);
                 GHVCmdResult result = null;
                 long current = System.currentTimeMillis();
                 long quit = current + timeOut;
@@ -1525,13 +1626,13 @@ public class MadSession {
         para[5] = (byte)(findStartTag(para, para[0]) & 0xFF);
 
         byte[] assemble = assembleCmd(CmdResultFactory.CMD_GET_FIRMWARE_VERSION_TAG, para);
-        if (MadSessionManager.getInstance().isConnected()) {
+        if (mConnection != null) {
             int retry = DEFAULT_RETRY_TIMES;
             boolean find = false;
             do {
                 retry--;
                 MadSessionManager.getInstance().statSendCmd(assemble.length);
-                MadSessionManager.getInstance().getSerialDevice().syncWrite(assemble, SYNC_WRITE_TIME_OUT);
+                mConnection.syncWrite(assemble, SYNC_WRITE_TIME_OUT);
                 GFVCmdResult result = null;
                 long current = System.currentTimeMillis();
                 long quit = current + timeOut;
@@ -1582,13 +1683,13 @@ public class MadSession {
             para[paraLen] = (byte) (findStartTag(para, para[0]) & 0xFF);
 
             byte[] assemble = assembleCmd(CmdResultFactory.CMD_SET_SERIAL_NO_TAG, para);
-            if (MadSessionManager.getInstance().isConnected()) {
+            if (mConnection != null) {
                 int retry = DEFAULT_RETRY_TIMES;
                 boolean find = false;
                 do {
                     retry--;
                     MadSessionManager.getInstance().statSendCmd(assemble.length);
-                    MadSessionManager.getInstance().getSerialDevice().syncWrite(assemble, SYNC_WRITE_TIME_OUT);
+                    mConnection.syncWrite(assemble, SYNC_WRITE_TIME_OUT);
                     SSNCmdResult result = null;
                     long current = System.currentTimeMillis();
                     long quit = current + timeOut;
@@ -1635,13 +1736,13 @@ public class MadSession {
         para[5] = (byte)(findStartTag(para, para[0]) & 0xFF);
 
         byte[] assemble = assembleCmd(CmdResultFactory.CMD_GET_SERIAL_NO_TAG, para);
-        if (MadSessionManager.getInstance().isConnected()) {
+        if (mConnection != null) {
             int retry = DEFAULT_RETRY_TIMES;
             boolean find = false;
             do {
                 retry--;
                 MadSessionManager.getInstance().statSendCmd(assemble.length);
-                MadSessionManager.getInstance().getSerialDevice().syncWrite(assemble, SYNC_WRITE_TIME_OUT);
+                mConnection.syncWrite(assemble, SYNC_WRITE_TIME_OUT);
                 GSNCmdResult result = null;
                 long current = System.currentTimeMillis();
                 long quit = current + timeOut;
@@ -1692,13 +1793,13 @@ public class MadSession {
             para[paraLen] = (byte) (findStartTag(para, para[0]) & 0xFF);
 
             byte[] assemble = assembleCmd(CmdResultFactory.CMD_SET_DEVICE_NAME_TAG, para);
-            if (MadSessionManager.getInstance().isConnected()) {
+            if (mConnection != null) {
                 int retry = DEFAULT_RETRY_TIMES;
                 boolean find = false;
                 do {
                     retry--;
                     MadSessionManager.getInstance().statSendCmd(assemble.length);
-                    MadSessionManager.getInstance().getSerialDevice().syncWrite(assemble, SYNC_WRITE_TIME_OUT);
+                    mConnection.syncWrite(assemble, SYNC_WRITE_TIME_OUT);
                     SDNCmdResult result = null;
                     long current = System.currentTimeMillis();
                     long quit = current + timeOut;
@@ -1744,13 +1845,13 @@ public class MadSession {
         para[5] = (byte)(findStartTag(para, para[0]) & 0xFF);
 
         byte[] assemble = assembleCmd(CmdResultFactory.CMD_GET_DEVICE_NAME_TAG, para);
-        if (MadSessionManager.getInstance().isConnected()) {
+        if (mConnection != null) {
             int retry = DEFAULT_RETRY_TIMES;
             boolean find = false;
             do {
                 retry--;
                 MadSessionManager.getInstance().statSendCmd(assemble.length);
-                MadSessionManager.getInstance().getSerialDevice().syncWrite(assemble, SYNC_WRITE_TIME_OUT);
+                mConnection.syncWrite(assemble, SYNC_WRITE_TIME_OUT);
                 GDNCmdResult result = null;
                 long current = System.currentTimeMillis();
                 long quit = current + timeOut;
@@ -1801,13 +1902,13 @@ public class MadSession {
             para[paraLen] = (byte) (findStartTag(para, para[0]) & 0xFF);
 
             byte[] assemble = assembleCmd(CmdResultFactory.CMD_SET_VENDOR_TAG, para);
-            if (MadSessionManager.getInstance().isConnected()) {
+            if (mConnection != null) {
                 int retry = DEFAULT_RETRY_TIMES;
                 boolean find = false;
                 do {
                     retry--;
                     MadSessionManager.getInstance().statSendCmd(assemble.length);
-                    MadSessionManager.getInstance().getSerialDevice().syncWrite(assemble, SYNC_WRITE_TIME_OUT);
+                    mConnection.syncWrite(assemble, SYNC_WRITE_TIME_OUT);
                     SVDCmdResult result = null;
                     long current = System.currentTimeMillis();
                     long quit = current + timeOut;
@@ -1853,13 +1954,13 @@ public class MadSession {
         para[5] = (byte)(findStartTag(para, para[0]) & 0xFF);
 
         byte[] assemble = assembleCmd(CmdResultFactory.CMD_GET_VENDOR_TAG, para);
-        if (MadSessionManager.getInstance().isConnected()) {
+        if (mConnection != null) {
             int retry = DEFAULT_RETRY_TIMES;
             boolean find = false;
             do {
                 retry--;
                 MadSessionManager.getInstance().statSendCmd(assemble.length);
-                MadSessionManager.getInstance().getSerialDevice().syncWrite(assemble, SYNC_WRITE_TIME_OUT);
+                mConnection.syncWrite(assemble, SYNC_WRITE_TIME_OUT);
                 GVDCmdResult result = null;
                 long current = System.currentTimeMillis();
                 long quit = current + timeOut;
@@ -1909,13 +2010,13 @@ public class MadSession {
             para[paraLen] = (byte) (findStartTag(para, para[0]) & 0xFF);
 
             byte[] assemble = assembleCmd(CmdResultFactory.CMD_SET_KEY_FUNCTION_TAG, para);
-            if (MadSessionManager.getInstance().isConnected()) {
+            if (mConnection != null) {
                 int retry = DEFAULT_RETRY_TIMES;
                 boolean find = false;
                 do {
                     retry--;
                     MadSessionManager.getInstance().statSendCmd(assemble.length);
-                    MadSessionManager.getInstance().getSerialDevice().syncWrite(assemble, SYNC_WRITE_TIME_OUT);
+                    mConnection.syncWrite(assemble, SYNC_WRITE_TIME_OUT);
                     SKFCmdResult result = null;
                     long current = System.currentTimeMillis();
                     long quit = current + timeOut;
@@ -1964,13 +2065,13 @@ public class MadSession {
             para[6] = (byte) (findStartTag(para, para[0]) & 0xFF);
 
             byte[] assemble = assembleCmd(CmdResultFactory.CMD_GET_KEY_FUNCTION_TAG, para);
-            if (MadSessionManager.getInstance().isConnected()) {
+            if (mConnection != null) {
                 int retry = DEFAULT_RETRY_TIMES;
                 boolean find = false;
                 do {
                     retry--;
                     MadSessionManager.getInstance().statSendCmd(assemble.length);
-                    MadSessionManager.getInstance().getSerialDevice().syncWrite(assemble, SYNC_WRITE_TIME_OUT);
+                    mConnection.syncWrite(assemble, SYNC_WRITE_TIME_OUT);
                     GKFCmdResult result = null;
                     long current = System.currentTimeMillis();
                     long quit = current + timeOut;
@@ -1997,7 +2098,7 @@ public class MadSession {
 
     public MadKeyEvent readKey(long timeOut){
         MadKeyEvent key = null;
-        if (MadSessionManager.getInstance().isConnected()) {
+        if (mConnection != null) {
             boolean find = false;
             RKVCmdResult result = null;
             long current = System.currentTimeMillis();
@@ -2043,13 +2144,13 @@ public class MadSession {
         para[5] = (byte)(findStartTag(para, para[0]) & 0xFF);
         //paraStr = ByteOps.byteArrayToHexStr(para);
         byte[] assemble = assembleCmd(CmdResultFactory.CMD_OPEN_LCD_TAG, para);
-        if (MadSessionManager.getInstance().isConnected()) {
+        if (mConnection != null) {
             int retry = DEFAULT_RETRY_TIMES;
             boolean find = false;
             do {
                 retry--;
                 MadSessionManager.getInstance().statSendCmd(assemble.length);
-                MadSessionManager.getInstance().getSerialDevice().syncWrite(assemble, SYNC_WRITE_TIME_OUT);
+                mConnection.syncWrite(assemble, SYNC_WRITE_TIME_OUT);
                 OPLCmdResult result = null;
                 long current = System.currentTimeMillis();
                 long quit = current + timeOut;
@@ -2094,13 +2195,13 @@ public class MadSession {
         para[5] = (byte)(findStartTag(para, para[0]) & 0xFF);
         //paraStr = ByteOps.byteArrayToHexStr(para);
         byte[] assemble = assembleCmd(CmdResultFactory.CMD_CLOSE_LCD_TAG, para);
-        if (MadSessionManager.getInstance().isConnected()) {
+        if (mConnection != null) {
             int retry = DEFAULT_RETRY_TIMES;
             boolean find = false;
             do {
                 retry--;
                 MadSessionManager.getInstance().statSendCmd(assemble.length);
-                MadSessionManager.getInstance().getSerialDevice().syncWrite(assemble, SYNC_WRITE_TIME_OUT);
+                mConnection.syncWrite(assemble, SYNC_WRITE_TIME_OUT);
                 CLLCmdResult result = null;
                 long current = System.currentTimeMillis();
                 long quit = current + timeOut;
@@ -2147,13 +2248,13 @@ public class MadSession {
 
         para[6] = (byte)(findStartTag(para, para[0]) & 0xFF);
         byte[] assemble = assembleCmd(CmdResultFactory.CMD_SWITCH_3D_TAG, para);
-        if (MadSessionManager.getInstance().isConnected()) {
+        if (mConnection != null) {
             int retry = DEFAULT_RETRY_TIMES;
             boolean find = false;
             do {
                 retry--;
                 MadSessionManager.getInstance().statSendCmd(assemble.length);
-                MadSessionManager.getInstance().getSerialDevice().syncWrite(assemble, SYNC_WRITE_TIME_OUT);
+                mConnection.syncWrite(assemble, SYNC_WRITE_TIME_OUT);
                 S3DCmdResult result = null;
                 long current = System.currentTimeMillis();
                 long quit = current + timeOut;
@@ -2197,13 +2298,13 @@ public class MadSession {
 
         para[5] = (byte)(findStartTag(para, para[0]) & 0xFF);
         byte[] assemble = assembleCmd(CmdResultFactory.CMD_GET_3D_TAG, para);
-        if (MadSessionManager.getInstance().isConnected()) {
+        if (mConnection != null) {
             int retry = DEFAULT_RETRY_TIMES;
             boolean find = false;
             do {
                 retry--;
                 MadSessionManager.getInstance().statSendCmd(assemble.length);
-                MadSessionManager.getInstance().getSerialDevice().syncWrite(assemble, SYNC_WRITE_TIME_OUT);
+                mConnection.syncWrite(assemble, SYNC_WRITE_TIME_OUT);
                 G3DCmdResult result = null;
                 long current = System.currentTimeMillis();
                 long quit = current + timeOut;

@@ -1,13 +1,14 @@
 package com.felhr.sensors;
 
-import com.felhr.madsessions.MadSession;
+import com.felhr.madsessions.MadConnectionManager;
+import com.felhr.madsessions.MadDeviceConnection;
 
 public class BMI160A extends MadSensor {
     private static final float GRAVITY_EARTH=9.807f;
     private int mSensitivity;
-
+    static long mCapacity = MadConnectionManager.getDeviceCapacity()| MadDeviceConnection.CAPACITY_ACCELERATOR_MASK;
     public BMI160A(){
-        super();
+        super(mCapacity);
         mInited = false;
         mChannel = BMI160.getInstance().mChannel;
         mSlaveAddr = BMI160.getInstance().mSlaveAddr;

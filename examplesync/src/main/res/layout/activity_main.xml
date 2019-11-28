@@ -118,75 +118,72 @@
         android:layout_marginTop="0dp" />
 
     <RelativeLayout
-        android:layout_width="wrap_content"
-        android:layout_height="match_parent"
-        android:layout_below="@+id/txtview_err_rate"
-        android:layout_alignStart="@+id/textView2"
-        android:layout_alignParentEnd="true"
-        android:layout_alignParentBottom="true"
-        android:layout_marginStart="0dp"
-        android:layout_marginTop="60dp"
-        android:layout_marginEnd="0dp"
-        android:layout_marginBottom="0dp">
+        android:layout_width="395dp"
+        android:layout_height="113dp"
+        android:layout_below="@id/txtview_err_rate"
+        android:layout_alignParentBottom="true">
 
         <Button
             android:id="@+id/magEnable"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_alignParentBottom="true"
-            android:layout_marginStart="0dp"
-            android:layout_marginBottom="92dp"
+            android:layout_alignParentLeft="true"
+            android:layout_alignParentTop="true"
             android:text="@string/disable_mag" />
 
         <Button
             android:id="@+id/accEnable"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_alignParentBottom="true"
-            android:layout_marginStart="120dp"
-            android:layout_marginBottom="92dp"
+            android:layout_toRightOf="@id/magEnable"
             android:text="@string/disable_acc" />
 
         <Button
             android:id="@+id/gyroEnable"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_alignParentBottom="true"
-            android:layout_marginStart="230dp"
-            android:layout_marginBottom="93dp"
+            android:layout_toRightOf="@id/accEnable"
             android:text="@string/disable_gyro" />
 
         <Button
             android:id="@+id/alsEnable"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_alignParentStart="true"
-            android:layout_alignParentBottom="true"
-            android:layout_marginStart="0dp"
-            android:layout_marginBottom="14dp"
+            android:layout_alignWithParentIfMissing="true"
+            android:layout_toRightOf="@id/gyroEnable"
             android:text="@string/disable_als" />
 
         <Button
             android:id="@+id/psEnable"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_alignBottom="@+id/alsEnable"
-            android:layout_alignParentEnd="true"
-            android:layout_marginStart="120dp"
-            android:layout_marginEnd="110dp"
-            android:layout_marginBottom="1dp"
+            android:layout_alignStart="@id/magEnable"
+            android:layout_alignBottom="@id/btnStop"
             android:text="@string/disable_ps" />
 
         <Button
             android:id="@+id/upgrade"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_alignBottom="@+id/alsEnable"
-            android:layout_alignParentEnd="true"
-            android:layout_marginStart="200dp"
-            android:layout_marginEnd="9dp"
-            android:layout_marginBottom="1dp"
+            android:layout_alignBottom="@id/btnStop"
+            android:layout_toRightOf="@id/psEnable"
             android:text="@string/upgrade" />
+
+        <Button
+            android:id="@+id/btnStart"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignBottom="@id/btnStop"
+            android:layout_toRightOf="@id/upgrade"
+            android:text="start" />
+
+        <Button
+            android:id="@+id/btnStop"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/alsEnable"
+            android:layout_toRightOf="@id/btnStart"
+            android:text="stop" />
     </RelativeLayout>
 
 </RelativeLayout>

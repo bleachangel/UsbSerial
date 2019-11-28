@@ -4,6 +4,7 @@ public class CmdResultFactory {
     public static final String CMD_SETUP_TAG    = ":STP";
     public static final String CMD_TEST_TAG     = ":TST";
     public static final String CMD_RESET_TAG    = ":RST";
+    public static final String CMD_GET_CAPACITY_TAG    = ":GCP";
     public static final String CMD_I2C_READ_TAG   = ":I2R";
     public static final String CMD_I2C_WRITE_TAG   = ":I2W";
     public static final String CMD_AUTO_REPORT_TAG   = ":ATR";
@@ -36,6 +37,8 @@ public class CmdResultFactory {
     public static final String CMD_CLOSE_LCD_TAG   = ":CLL";
     public static final String CMD_SWITCH_3D_TAG   = ":S3D";
     public static final String CMD_GET_3D_TAG   = ":G3D";
+    public static final String CMD_KEEP_LIVE_TAG   = ":KPL";
+    public static final String CMD_ERR_MESSAGE_TAG   = ":ERR";
     public static final String CMD_END_TAG   = ":END";
 
     public static final byte CMD_START_TAG = ':';
@@ -76,7 +79,10 @@ public class CmdResultFactory {
     public static final int CMD_CLOSE_LCD_VALUE   = 33;
     public static final int CMD_SWITCH_3D_VALUE   = 34;
     public static final int CMD_GET_3D_VALUE   = 35;
-    public static final int CMD_END_VALUE   = 36;
+    public static final int CMD_GET_CAPACITY_VALUE   = 36;
+    public static final int CMD_KEEP_LIVE_VALUE   = 37;
+    public static final int CMD_ERR_MESSAGE_VALUE   = 38;
+    public static final int CMD_END_VALUE   = 39;
     public static final int CMD_INVALID_VALUE    = -1;
 
     public static byte[] convert(byte[] chars){
@@ -193,8 +199,13 @@ public class CmdResultFactory {
             return  new S3DCmdResult(CMD_SWITCH_3D_VALUE, para);
         } else if(cmdType.equalsIgnoreCase(CMD_GET_3D_TAG)){
             return  new G3DCmdResult(CMD_GET_3D_VALUE, para);
+        } else if(cmdType.equalsIgnoreCase(CMD_GET_CAPACITY_TAG)){
+            return  new GCPCmdResult(CMD_GET_CAPACITY_VALUE, para);
+        } else if(cmdType.equalsIgnoreCase(CMD_KEEP_LIVE_TAG)){
+            return  new KPLCmdResult(CMD_KEEP_LIVE_VALUE, para);
+        } else if(cmdType.equalsIgnoreCase(CMD_ERR_MESSAGE_TAG)){
+            return  new ERRCmdResult(CMD_ERR_MESSAGE_VALUE, para);
         }
-
         return null;
     }
 

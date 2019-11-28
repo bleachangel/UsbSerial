@@ -1,11 +1,12 @@
 package com.felhr.sensors;
 
-import com.felhr.madsessions.MadSession;
+import com.felhr.madsessions.MadConnectionManager;
+import com.felhr.madsessions.MadDeviceConnection;
 
 public class LTR579Als extends MadSensor {
-
+    static long mCapacity = MadConnectionManager.getDeviceCapacity()| MadDeviceConnection.CAPACITY_AMBIENT_LIGHT_MASK;
     public LTR579Als(){
-        super();
+        super(mCapacity);
         mChannel = LTR579.getInstance().mChannel;
         mSlaveAddr = LTR579.getInstance().mSlaveAddr;
         mInited = false;

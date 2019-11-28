@@ -19,12 +19,9 @@ public class SerialBuffer
     public SerialBuffer(boolean version)
     {
         writeBuffer = new SynchronizedBuffer();
-        if(version)
-        {
+        if(version) {
             readBuffer = ByteBuffer.allocate(DEFAULT_READ_BUFFER_SIZE);
-
-        }else
-        {
+        } else {
             readBufferCompatible = new byte[DEFAULT_READ_BUFFER_SIZE];
         }
     }
@@ -52,8 +49,8 @@ public class SerialBuffer
             byte[] dst = new byte[readBuffer.position()];
             readBuffer.position(0);
             readBuffer.get(dst, 0, dst.length);
-            if(debugging)
-                UsbSerialDebugger.printReadLogGet(dst, true);
+            //if(debugging)
+                //UsbSerialDebugger.printReadLogGet(dst, true);
             return dst;
         }
     }
@@ -100,8 +97,8 @@ public class SerialBuffer
         {
             if(src == null || src.length == 0) return;
 
-            if(debugging)
-                UsbSerialDebugger.printLogPut(src, true);
+            //if(debugging)
+                //UsbSerialDebugger.printLogPut(src, true);
 
             buffer.write(src);
             notify();
@@ -131,8 +128,8 @@ public class SerialBuffer
                 }
             }
 
-            if(debugging)
-                UsbSerialDebugger.printLogGet(dst, true);
+            //if(debugging)
+                //UsbSerialDebugger.printLogGet(dst, true);
 
             return dst;
         }

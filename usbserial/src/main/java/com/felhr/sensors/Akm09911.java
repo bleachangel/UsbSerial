@@ -1,5 +1,7 @@
 package com.felhr.sensors;
 
+import com.felhr.madsessions.MadConnectionManager;
+import com.felhr.madsessions.MadDeviceConnection;
 import com.felhr.madsessions.MadSession;
 
 public class Akm09911 extends MadSensor {
@@ -21,8 +23,9 @@ public class Akm09911 extends MadSensor {
     public static final byte CONTINUOUS_MEAS_MODE_4_VALUE = 0x8;
     public static final byte FUSE_ROM_MODE_VALUE = 0x1F;
 
+    static long mCapacity = MadConnectionManager.getDeviceCapacity()| MadDeviceConnection.CAPACITY_MAGNETIC_MASK;
     public Akm09911(){
-        super();
+        super(mCapacity);
         mInited = false;
         mChannel = 0;
         mSlaveAddr = 0x0c;

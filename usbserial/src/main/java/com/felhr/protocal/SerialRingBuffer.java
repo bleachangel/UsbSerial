@@ -1,7 +1,6 @@
 package com.felhr.protocal;
 
 import java.nio.charset.Charset;
-import java.util.Arrays;
 
 public class SerialRingBuffer{
     private int mReadPosStart;
@@ -62,6 +61,51 @@ public class SerialRingBuffer{
         return  true;
     }
 
+    private boolean isCmdTag(int curPos){
+        boolean ret = false;
+        int next1 = (curPos + 1) % mCapacity;
+        int next2 = (curPos + 2) % mCapacity;
+        int next3 = (curPos + 3) % mCapacity;
+
+        ret = (mRingBuffer[curPos] == CmdResultFactory.CMD_START_TAG)
+                && ((mRingBuffer[next1] == 'S'&& mRingBuffer[next2] == 'T'&& mRingBuffer[next3] == 'P')
+                || (mRingBuffer[next1] == 'T'&& mRingBuffer[next2] == 'S'&& mRingBuffer[next3] == 'T')
+                || (mRingBuffer[next1] == 'R'&& mRingBuffer[next2] == 'S'&& mRingBuffer[next3] == 'T')
+                || (mRingBuffer[next1] == 'G'&& mRingBuffer[next2] == 'C'&& mRingBuffer[next3] == 'P')
+                || (mRingBuffer[next1] == 'I'&& mRingBuffer[next2] == '2'&& mRingBuffer[next3] == 'R')
+                || (mRingBuffer[next1] == 'I'&& mRingBuffer[next2] == '2'&& mRingBuffer[next3] == 'W')
+                || (mRingBuffer[next1] == 'I'&& mRingBuffer[next2] == 'O'&& mRingBuffer[next3] == 'R')
+                || (mRingBuffer[next1] == 'I'&& mRingBuffer[next2] == 'O'&& mRingBuffer[next3] == 'W')
+                || (mRingBuffer[next1] == 'I'&& mRingBuffer[next2] == '2'&& mRingBuffer[next3] == 'C')
+                || (mRingBuffer[next1] == 'A'&& mRingBuffer[next2] == 'T'&& mRingBuffer[next3] == 'R')
+                || (mRingBuffer[next1] == 'S'&& mRingBuffer[next2] == 'V'&& mRingBuffer[next3] == 'L')
+                || (mRingBuffer[next1] == 'G'&& mRingBuffer[next2] == 'V'&& mRingBuffer[next3] == 'L')
+                || (mRingBuffer[next1] == 'S'&& mRingBuffer[next2] == 'L'&& mRingBuffer[next3] == 'B')
+                || (mRingBuffer[next1] == 'G'&& mRingBuffer[next2] == 'L'&& mRingBuffer[next3] == 'B')
+                || (mRingBuffer[next1] == 'O'&& mRingBuffer[next2] == 'P'&& mRingBuffer[next3] == 'C')
+                || (mRingBuffer[next1] == 'C'&& mRingBuffer[next2] == 'L'&& mRingBuffer[next3] == 'C')
+                || (mRingBuffer[next1] == 'O'&& mRingBuffer[next2] == 'F'&& mRingBuffer[next3] == 'L')
+                || (mRingBuffer[next1] == 'C'&& mRingBuffer[next2] == 'F'&& mRingBuffer[next3] == 'L')
+                || (mRingBuffer[next1] == 'U'&& mRingBuffer[next2] == 'P'&& mRingBuffer[next3] == 'F')
+                || (mRingBuffer[next1] == 'G'&& mRingBuffer[next2] == 'H'&& mRingBuffer[next3] == 'V')
+                || (mRingBuffer[next1] == 'G'&& mRingBuffer[next2] == 'F'&& mRingBuffer[next3] == 'V')
+                || (mRingBuffer[next1] == 'S'&& mRingBuffer[next2] == 'S'&& mRingBuffer[next3] == 'N')
+                || (mRingBuffer[next1] == 'G'&& mRingBuffer[next2] == 'S'&& mRingBuffer[next3] == 'N')
+                || (mRingBuffer[next1] == 'S'&& mRingBuffer[next2] == 'D'&& mRingBuffer[next3] == 'N')
+                || (mRingBuffer[next1] == 'G'&& mRingBuffer[next2] == 'D'&& mRingBuffer[next3] == 'N')
+                || (mRingBuffer[next1] == 'S'&& mRingBuffer[next2] == 'V'&& mRingBuffer[next3] == 'D')
+                || (mRingBuffer[next1] == 'G'&& mRingBuffer[next2] == 'V'&& mRingBuffer[next3] == 'D')
+                || (mRingBuffer[next1] == 'S'&& mRingBuffer[next2] == 'K'&& mRingBuffer[next3] == 'F')
+                || (mRingBuffer[next1] == 'G'&& mRingBuffer[next2] == 'K'&& mRingBuffer[next3] == 'F')
+                || (mRingBuffer[next1] == 'R'&& mRingBuffer[next2] == 'K'&& mRingBuffer[next3] == 'V')
+                || (mRingBuffer[next1] == 'O'&& mRingBuffer[next2] == 'P'&& mRingBuffer[next3] == 'L')
+                || (mRingBuffer[next1] == 'C'&& mRingBuffer[next2] == 'L'&& mRingBuffer[next3] == 'L')
+                || (mRingBuffer[next1] == 'S'&& mRingBuffer[next2] == '3'&& mRingBuffer[next3] == 'D')
+                || (mRingBuffer[next1] == 'G'&& mRingBuffer[next2] == '3'&& mRingBuffer[next3] == 'D')
+                || (mRingBuffer[next1] == 'K'&& mRingBuffer[next2] == 'P'&& mRingBuffer[next3] == 'L')/*KPL指令，设备启动后一直发送，一旦接收到指令，则立即停止*/
+                || (mRingBuffer[next1] == 'E'&& mRingBuffer[next2] == 'R'&& mRingBuffer[next3] == 'R')/*ERR指令，设备运行过程中如果出现错误的返回值*/);
+        return ret;
+    }
     public int getCmdStartPos(){
         int pos = -1;
         if(mReadSize < CmdResultFactory.CMD_TAG_LEN){
@@ -72,7 +116,7 @@ public class SerialRingBuffer{
 
         //首先读取出一部分数据，确定标签
         if(CmdResultFactory.CMD_START_TAG != mRingBuffer[mReadPosStart]){
-            for(int i = 1; i < mReadSize-1; i++) {
+            for(int i = 1; i < mReadSize; i++) {
                 int curPos = (mReadPosStart + i) % mCapacity;
                 if (CmdResultFactory.CMD_START_TAG == mRingBuffer[curPos]) {
                     mReadSize -= i;
@@ -87,58 +131,31 @@ public class SerialRingBuffer{
         }
 
         if(mReadSize > CmdResultFactory.CMD_TAG_LEN) {
-            int find = 0;
+            boolean findCmd = false;
+            //确定当前缓冲区中第一个完整指令的起始位置
             for(int i = 0; i < mReadSize; i++) {
                 int curPos = (mReadPosStart + i) % mCapacity;
-                int next1 = (curPos + 1) % mCapacity;
-                int next2 = (curPos + 2) % mCapacity;
-                int next3 = (curPos + 3) % mCapacity;
-                if (mRingBuffer[curPos] == CmdResultFactory.CMD_START_TAG
-                        && ((mRingBuffer[next1] == 'S'&& mRingBuffer[next2] == 'T'&& mRingBuffer[next3] == 'P')
-                        ||(mRingBuffer[next1] == 'T'&& mRingBuffer[next2] == 'S'&& mRingBuffer[next3] == 'T')
-                        ||(mRingBuffer[next1] == 'R'&& mRingBuffer[next2] == 'S'&& mRingBuffer[next3] == 'T')
-                        ||(mRingBuffer[next1] == 'I'&& mRingBuffer[next2] == '2'&& mRingBuffer[next3] == 'R')
-                        ||(mRingBuffer[next1] == 'I'&& mRingBuffer[next2] == '2'&& mRingBuffer[next3] == 'W')
-                        ||(mRingBuffer[next1] == 'I'&& mRingBuffer[next2] == 'O'&& mRingBuffer[next3] == 'R')
-                        ||(mRingBuffer[next1] == 'I'&& mRingBuffer[next2] == 'O'&& mRingBuffer[next3] == 'W')
-                        ||(mRingBuffer[next1] == 'I'&& mRingBuffer[next2] == '2'&& mRingBuffer[next3] == 'C')
-                        ||(mRingBuffer[next1] == 'A'&& mRingBuffer[next2] == 'T'&& mRingBuffer[next3] == 'R')
-                        ||(mRingBuffer[next1] == 'S'&& mRingBuffer[next2] == 'V'&& mRingBuffer[next3] == 'L')
-                        ||(mRingBuffer[next1] == 'G'&& mRingBuffer[next2] == 'V'&& mRingBuffer[next3] == 'L')
-                        ||(mRingBuffer[next1] == 'S'&& mRingBuffer[next2] == 'L'&& mRingBuffer[next3] == 'B')
-                        ||(mRingBuffer[next1] == 'G'&& mRingBuffer[next2] == 'L'&& mRingBuffer[next3] == 'B')
-                        ||(mRingBuffer[next1] == 'O'&& mRingBuffer[next2] == 'P'&& mRingBuffer[next3] == 'C')
-                        ||(mRingBuffer[next1] == 'C'&& mRingBuffer[next2] == 'L'&& mRingBuffer[next3] == 'C')
-                        ||(mRingBuffer[next1] == 'O'&& mRingBuffer[next2] == 'F'&& mRingBuffer[next3] == 'L')
-                        ||(mRingBuffer[next1] == 'C'&& mRingBuffer[next2] == 'F'&& mRingBuffer[next3] == 'L')
-                        ||(mRingBuffer[next1] == 'U'&& mRingBuffer[next2] == 'P'&& mRingBuffer[next3] == 'F')
-                        ||(mRingBuffer[next1] == 'G'&& mRingBuffer[next2] == 'H'&& mRingBuffer[next3] == 'V')
-                        ||(mRingBuffer[next1] == 'G'&& mRingBuffer[next2] == 'F'&& mRingBuffer[next3] == 'V')
-                        ||(mRingBuffer[next1] == 'S'&& mRingBuffer[next2] == 'S'&& mRingBuffer[next3] == 'N')
-                        ||(mRingBuffer[next1] == 'G'&& mRingBuffer[next2] == 'S'&& mRingBuffer[next3] == 'N')
-                        ||(mRingBuffer[next1] == 'S'&& mRingBuffer[next2] == 'D'&& mRingBuffer[next3] == 'N')
-                        ||(mRingBuffer[next1] == 'G'&& mRingBuffer[next2] == 'D'&& mRingBuffer[next3] == 'N')
-                        ||(mRingBuffer[next1] == 'S'&& mRingBuffer[next2] == 'V'&& mRingBuffer[next3] == 'D')
-                        ||(mRingBuffer[next1] == 'G'&& mRingBuffer[next2] == 'V'&& mRingBuffer[next3] == 'D')
-                        ||(mRingBuffer[next1] == 'S'&& mRingBuffer[next2] == 'K'&& mRingBuffer[next3] == 'F')
-                        ||(mRingBuffer[next1] == 'G'&& mRingBuffer[next2] == 'K'&& mRingBuffer[next3] == 'F')
-                        ||(mRingBuffer[next1] == 'R'&& mRingBuffer[next2] == 'K'&& mRingBuffer[next3] == 'V')
-                        ||(mRingBuffer[next1] == 'O'&& mRingBuffer[next2] == 'P'&& mRingBuffer[next3] == 'L')
-                        ||(mRingBuffer[next1] == 'C'&& mRingBuffer[next2] == 'L'&& mRingBuffer[next3] == 'L')
-                        ||(mRingBuffer[next1] == 'S'&& mRingBuffer[next2] == '3'&& mRingBuffer[next3] == 'D')
-                        ||(mRingBuffer[next1] == 'G'&& mRingBuffer[next2] == '3'&& mRingBuffer[next3] == 'D'))) {
-                    mReadSize -= i;
-                    mWriteSize += i;
-                    mReadPosStart = (mReadPosStart + i) % mCapacity;
-                    pos = mReadPosStart;
+                if (isCmdTag(curPos)) {
+                    int remainSize = mReadSize - i - 4;
+                    int readPos = (mReadPosStart + i + 4) % mCapacity;
+                    //提前判断剩余的数据是否可以组成一条完整指令和数据，如果不行，则跳过，等待下次。
+                    if(remainSize > 0 && mRingBuffer[readPos] <= remainSize) {
+                        mReadSize -= i;
+                        mWriteSize += i;
+                        mReadPosStart = (mReadPosStart + i) % mCapacity;
+                        pos = mReadPosStart;
 
-                    //统计错误率
-                    addErrCount(i);
+                        //统计错误率
+                        addErrCount(i);
+                    }
+
+                    findCmd = true;
                     break;
                 }
             }
 
-            if(pos == -1){
+            //当没有找到完整指令的情况下，跳过当前
+            if(pos == -1 && !findCmd){
                 mReadPosStart = (mReadPosStart + mReadSize) % mCapacity;
                 mWriteSize += mReadSize;
 
@@ -150,6 +167,7 @@ public class SerialRingBuffer{
         }
         return pos;
     }
+
     public byte[] getCmdTag(){
         byte[] cmd = null;
 
@@ -177,8 +195,8 @@ public class SerialRingBuffer{
     }
     public byte[] getCmdPara(){
         byte[] data = null;
-        //origin str : token(4)+len(1)+session_id(2)+crc(2)+end(4)
-        if(mReadSize > 5) {
+        //origin str : token(4)+len(1)+session_id(2)+crc(2)+index(1)
+        if(mReadSize >= 5) {
             int i;
             int curPos = mReadPosStart % mCapacity;
             int paraLen = mRingBuffer[curPos] + 1;
@@ -239,6 +257,30 @@ public class SerialRingBuffer{
         return data;
     }
 
+    //获取buffer内容
+    public byte[] getBuffer(){
+        byte[] data = null;
+        synchronized (this){
+            if(mReadSize > 0){
+                data = new byte[mReadSize];
+                int readPosEnd = mReadPosStart + mReadSize - 1;
+
+                if (readPosEnd <= mCapacity - 1) {
+                    System.arraycopy(mRingBuffer, mReadPosStart, data, 0, mReadSize);
+                } else {
+                    int len1 = mCapacity - mReadPosStart;
+                    System.arraycopy(mRingBuffer, mReadPosStart, data, 0, len1);
+                    System.arraycopy(mRingBuffer, 0, data, len1, mReadSize - len1);
+                }
+
+                mReadPosStart = (mReadPosStart + mReadSize) % mCapacity;
+                mWriteSize += mReadSize;
+                mReadSize = 0;
+            }
+        }
+        return data;
+    }
+
     //每次仅读取一个标签的数据，如果不够一个标签，则不读取
     public ProtocalCmd get(){
         byte[] cmd = null;
@@ -278,7 +320,9 @@ public class SerialRingBuffer{
         int len = data.length;
 
         synchronized (this){
-            if(mWriteSize > len){
+            //有空间可写，并且有数据可写
+            if(mWriteSize >= len && len > 0){
+                //环形缓冲区是否已经结尾
                 if(mCapacity >= mWritePosStart + len){
                     System.arraycopy(data, 0, mRingBuffer, mWritePosStart, len);
                 } else {
@@ -301,6 +345,9 @@ public class SerialRingBuffer{
 
     private long addErrCount(int err){
         long errCount = 0;
+        if(err <= 0){
+            return errCount;
+        }
         synchronized (this){
             if(lErrCount + err >=  Long.MAX_VALUE){
                 //复位
@@ -316,6 +363,9 @@ public class SerialRingBuffer{
 
     private long addRecvCount(int recv){
         long recvCount = 0;
+        if(recv <= 0){
+            return  recvCount;
+        }
         synchronized (this) {
             if (lRecvCount + recv >= Long.MAX_VALUE) {
                 //复位
@@ -331,6 +381,9 @@ public class SerialRingBuffer{
 
     private long addAnalyzedCount(int recv){
         long analyzeCount = 0;
+        if(recv <= 0){
+            return analyzeCount;
+        }
         synchronized (this) {
             if (lAnalyzedCount + recv >= Long.MAX_VALUE) {
                 //复位

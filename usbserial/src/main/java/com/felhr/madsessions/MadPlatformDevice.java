@@ -1,20 +1,11 @@
 package com.felhr.madsessions;
 
 public class MadPlatformDevice {
-    public static final int DEFAULT_TIME_OUT = 100;
+    public static final int DEFAULT_TIME_OUT = 500;
     public static final int READ_KEY_TIME_OUT = 5;
-    public MadSession mSession = null;
-    private static MadPlatformDevice mInstance = null;
-    private MadPlatformDevice(){
-        mSession = new MadSession();
-    }
-
-    public static MadPlatformDevice getInstance(){
-        if(mInstance == null){
-            mInstance = new MadPlatformDevice();
-        }
-
-        return mInstance;
+    public MadSession mSession;
+    public MadPlatformDevice(long capacity){
+        mSession = MadSessionManager.getInstance().createSession(capacity);
     }
 
     public int setup(){

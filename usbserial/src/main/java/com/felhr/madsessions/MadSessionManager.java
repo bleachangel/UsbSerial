@@ -1,43 +1,24 @@
 package com.felhr.madsessions;
 
-import android.hardware.usb.UsbDevice;
-import android.hardware.usb.UsbDeviceConnection;
+import android.util.Log;
 
-
-import com.felhr.protocal.ProtocalCmd;
-import com.felhr.usbserial.UsbSerialDevice;
-import com.felhr.usbserial.UsbSerialInterface;
-
+import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Map;
 
 public class MadSessionManager {
+    public static String TAG = "MadSessionManager";
     private static final MadSessionManager ourInstance = new MadSessionManager();
-    private Map<Integer,MadSession> mSessions = new HashMap<Integer, MadSession>();
-    public static final int BROADCAST_SESSION_ID = 0;
+    private HashMap<Integer,MadSession> mSessions;
+    private MadSession mControlSession;
+    public static final int CONTROL_SESSION_ID = 0;
     public static final int MIN_SESSION_ID = 1;
-    public static final int MAX_SESSION_ID = 0xFFFF;
-    public static final int BAUD_RATE = 921600;
+    public static final int MAX_SESSION_ID = 0xFFFE;
+    public static final int TEST_SESSION_ID = 0xFFFF;
     private int mSessionGenerator = MIN_SESSION_ID;
-
-    private UsbSerialDevice mSerialDevice = null;
-    private boolean mSerialPortConnected = false;
-
     private long mSendCmdCount;
     private long mSendByteCount;
-
     private long mRecvCmdCount;
     private long mRecvByteCount;
-
-    private UsbSerialInterface.UsbReadCallback mCallback = new UsbSerialInterface.UsbReadCallback() {
-        @Override
-        public void onReceivedData(ProtocalCmd cmd) {
-            MadSession session = mSessions.get(cmd.getSessionID());
-            if(session != null){
-                session.appendCmdResult(cmd);
-            }
-        }
-    };
 
     public static MadSessionManager getInstance() {
         return ourInstance;
@@ -48,96 +29,114 @@ public class MadSessionManager {
         mSendByteCount = 0;
         mRecvCmdCount = 0;
         mRecvByteCount = 0;
+
+        mSessions = new HashMap<Integer, MadSession>();
+        mControlSession = new MadSession(CONTROL_SESSION_ID, MadDeviceConnection.CAPACITY_ALL_MASK);
     }
 
-    public boolean registerSession(int sessionID, MadSession session){
+    public MadSession getControlSession(){
+        return mControlSession;
+    }
+
+    public ArrayList<MadSession> getSessionList(){
+        ArrayList<MadSession> sessionList = null;
+        synchronized (mSessions) {
+            sessionList = new ArrayList<MadSession>(mSessions.values());
+        }
+        return sessionList;
+    }
+
+    public int bind(MadDeviceConnection connection){
+        int ret = 0;
+        ArrayList<MadSession> sessionList = getSessionList();
+        for(int i = 0; i < sessionList.size(); i++){
+            MadSession session = sessionList.get(i);
+            MadConnectionManager.getInstance().bind(session.mSessionID, connection);
+        }
+
+        return ret;
+    }
+
+    public MadSession createSession(long capacity){
+        int sessionID = getID();
+        MadSession session = new MadSession(sessionID, capacity);
+        if(!registerSession(sessionID, session)){
+            Log.e(TAG, "Register session failure!");
+            session = null;
+        } else {
+            //遍历，搜索可用的connection
+            ArrayList<MadDeviceConnection> connection_list = MadConnectionManager.getInstance().filter(sessionID);
+
+            //如果不存在可用的连接，则有可能需要等待设备连接建立后，再与session进行绑定。
+            if(connection_list != null){
+                //默认使用第一个connenction
+                MadDeviceConnection conn = connection_list.get(0);
+                MadConnectionManager.getInstance().bind(sessionID, conn);
+            }
+        }
+        return session;
+    }
+
+    public int releaseSession(int sessionID){
+        int ret = -1;
+        MadSession session = getSession(sessionID);
+        if(session != null){
+            //如果已经绑定了connection，则需要先解除绑定
+            MadDeviceConnection conn = session.getConnection();
+            if(conn != null){
+                conn.unbind(sessionID);
+            }
+            session.setConnection(null);
+            unregisterSession(sessionID);
+        }
+        return ret;
+    }
+
+    public int releaseAllSession(){
+        int ret = -1;
+        ArrayList<MadSession> sessionList = getSessionList();
+        for(int i = 0; i < sessionList.size(); i++){
+            MadSession session = sessionList.get(i);
+            releaseSession(session.mSessionID);
+        }
+        return ret;
+    }
+
+    public MadSession getSession(int sessionID){
+        MadSession session = null;
+        synchronized (mSessions){
+            session = mSessions.get(sessionID);
+        }
+        return session;
+    }
+
+    //返回可用的connection list
+    private boolean registerSession(int sessionID, MadSession session){
         boolean ret = false;
         if(!mSessions.containsKey(sessionID) && session != null && !mSessions.containsValue(session)){
             mSessions.put(sessionID, session);
             ret = true;
         }
-
         return ret;
     }
 
-    public boolean unregisterSession(int sessionID){
-        boolean ret = false;
-        if(mSessions.containsKey(sessionID) ){
-            mSessions.remove(sessionID);
-        }
-
-        return ret;
-    }
-
-    public boolean connect(UsbDevice device, UsbDeviceConnection connection){
-        boolean ret = false;
-
-        mSerialDevice = UsbSerialDevice.createUsbSerialDevice(device, connection);
-        if (mSerialDevice != null) {
-            if (mSerialDevice.open()) {
-                mSerialPortConnected = true;
-                mSerialDevice.setBaudRate(BAUD_RATE);
-                mSerialDevice.setDataBits(UsbSerialInterface.DATA_BITS_8);
-                mSerialDevice.setStopBits(UsbSerialInterface.STOP_BITS_1);
-                mSerialDevice.setParity(UsbSerialInterface.PARITY_NONE);
-
-                mSerialDevice.setFlowControl(UsbSerialInterface.FLOW_CONTROL_OFF);
-                mSerialDevice.setReadCallback(mCallback);
-                //mSerialDevice.getCTS(ctsCallback);
-                //mSerialDevice.getDSR(dsrCallback);
-
-                ret = true;
-            } else {
-                mSerialDevice = null;
+    private boolean unregisterSession(int sessionID){
+        synchronized (mSessions){
+            if(mSessions.containsKey(sessionID)){
+                mSessions.remove(sessionID);
             }
         }
-
-        return  ret;
+        return true;
     }
 
-    public boolean isConnected(){
-        synchronized (this) {
-            return mSerialPortConnected;
-        }
-    }
-
-    public UsbSerialDevice getSerialDevice(){
-        synchronized (this) {
-            return mSerialDevice;
-        }
-    }
-
-    public boolean disconnect(){
-        boolean ret = false;
-
-        synchronized (this) {
-            if (mSerialDevice != null) {
-                mSerialDevice.close();
-                mSerialPortConnected = false;
+    private int getID(){
+        while (mSessions.containsKey(mSessionGenerator)) {
+            mSessionGenerator++;
+            if(mSessionGenerator > MAX_SESSION_ID){
+                mSessionGenerator = MIN_SESSION_ID;
             }
         }
-        return ret;
-    }
-
-    public int newID(){
-        int sessionID;
-        sessionID = mSessionGenerator++;
-        while (mSessions.containsKey(sessionID)) {
-            sessionID ++;
-            if(sessionID > MAX_SESSION_ID){
-                sessionID = MIN_SESSION_ID;
-            }
-        }
-
-        mSessionGenerator = sessionID;
-        return sessionID;
-    }
-
-    public boolean deleteID(int sessionID){
-        if(mSessions.containsKey(sessionID)){
-            mSessions.remove(sessionID);
-        }
-        return  true;
+        return mSessionGenerator;
     }
 
     public void statSendCmd(int size){
@@ -183,18 +182,10 @@ public class MadSessionManager {
     }
 
     public long getRecvByteCount(){
-        if(mSerialDevice == null){
-            return 0;
-        }
-
-        return mSerialDevice.getRecvCount();
+        return MadConnectionManager.getInstance().getRecvCount();
     }
 
     public long getRecvErrCount(){
-        if(mSerialDevice == null){
-            return 0;
-        }
-
-        return mSerialDevice.getErrCount();
+        return MadConnectionManager.getInstance().getErrCount();
     }
 }

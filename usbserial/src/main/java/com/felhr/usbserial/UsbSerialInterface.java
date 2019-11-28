@@ -96,6 +96,7 @@ public interface UsbSerialInterface
     interface UsbReadCallback
     {
         void onReceivedData(ProtocalCmd cmd);
+        void onReceivedDataForTest(byte[] data);
     }
 
 }

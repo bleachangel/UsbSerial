@@ -1,23 +1,24 @@
 package com.felhr.usbserial;
 
-import com.felhr.protocal.ProtocalCmd;
-import com.felhr.protocal.SerialRingBuffer;
-
 import android.hardware.usb.UsbConstants;
 import android.hardware.usb.UsbDevice;
 import android.hardware.usb.UsbDeviceConnection;
 import android.hardware.usb.UsbEndpoint;
 import android.hardware.usb.UsbInterface;
 import android.hardware.usb.UsbRequest;
+import android.util.Log;
 
-import java.nio.ByteBuffer;
-import java.util.Arrays;
+import com.felhr.protocal.CmdResultFactory;
+import com.felhr.protocal.ProtocalCmd;
+import com.felhr.protocal.SerialRingBuffer;
 
 public abstract class UsbSerialDevice implements UsbSerialInterface {
+    public static final String TAG="UsbSerialDevice";
     public static final String CDC = "cdc";
     protected static final String COM_PORT = "COM ";
     protected static final int USB_TIMEOUT = 0;
     private static final boolean mr1Version;
+    private boolean mDebug = false;
 
     // Get Android version if version < 4.3 It is not going to be asynchronous read operations
     static {
@@ -154,6 +155,14 @@ public abstract class UsbSerialDevice implements UsbSerialInterface {
         return 0;
     }
 
+    public int removeReadCallback(int session) {
+        int ret = -1;
+        if(bufferThread != null){
+            ret = bufferThread.removeCallback();
+        }
+        return ret;
+    }
+
     @Override
     public abstract void close();
 
@@ -283,7 +292,7 @@ public abstract class UsbSerialDevice implements UsbSerialInterface {
      */
     protected void restartWorkingThread() {
         if (mr1Version && workerThread == null) {
-            workerThread = new WorkerThread(this);
+            workerThread = new WorkerThread();
             workerThread.start();
             while (!workerThread.isAlive()) {
             } // Busy waiting
@@ -315,7 +324,7 @@ public abstract class UsbSerialDevice implements UsbSerialInterface {
 
     protected void restartBufferThread() {
         if (bufferThread == null) {
-            bufferThread = new BufferThread(this);
+            bufferThread = new BufferThread();
             bufferThread.start();
             while (!bufferThread.isAlive()) {
             } // Busy waiting
@@ -326,31 +335,43 @@ public abstract class UsbSerialDevice implements UsbSerialInterface {
      * WorkerThread waits for request notifications from IN endpoint
      */
     protected class WorkerThread extends AbstractWorkerThread {
-        private final UsbSerialDevice mUsbSerialDevice;
         private UsbRequest requestIN = null;
 
-        public WorkerThread(UsbSerialDevice usbSerialDevice) {
+        public WorkerThread() {
             super("WorkerThread");
-            this.mUsbSerialDevice = usbSerialDevice;
         }
 
         @Override
         public void doRun() {
             // Queue a new request
-            if(requestIN != null) {
+            if (requestIN != null && started) {
                 requestIN.queue(serialBuffer.getReadBuffer(), SerialBuffer.DEFAULT_READ_BUFFER_SIZE);
 
-                UsbRequest resonse = connection.requestWait();
-                if (resonse != null && resonse.getEndpoint().getType() == UsbConstants.USB_ENDPOINT_XFER_BULK
-                        && resonse.getEndpoint().getDirection() == UsbConstants.USB_DIR_IN) {
-                    byte[] data = serialBuffer.getDataReceived();
+                UsbRequest resonse = null;
+                try {
+                    resonse = connection.requestWait();
 
-                    // Clear buffer, execute the callback
-                    serialBuffer.clearReadBuffer();
+                    if (resonse != null && resonse.getEndpoint().getType() == UsbConstants.USB_ENDPOINT_XFER_BULK
+                            && resonse.getEndpoint().getDirection() == UsbConstants.USB_DIR_IN) {
+                        byte[] data = serialBuffer.getDataReceived();
 
-                    //加入到分析缓冲区
-                    analyzeBuffer.put(data);
+                        // Clear buffer, execute the callback
+                        serialBuffer.clearReadBuffer();
+
+                        //加入到分析缓冲区
+                        analyzeBuffer.put(data);
+                        if(mDebug) {
+                            Log.d(TAG, new String(data));
+                        }
+                    }
+                } catch (IllegalArgumentException e) {
+                    e.printStackTrace();
                 }
+            }
+            try {
+                Thread.sleep(1,0);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
             }
         }
 
@@ -360,9 +381,6 @@ public abstract class UsbSerialDevice implements UsbSerialInterface {
 
         public void setUsbRequest(UsbRequest request) {
             this.requestIN = request;
-        }
-
-        private void onReceivedData(byte[] data) {
         }
     }
 
@@ -379,11 +397,11 @@ public abstract class UsbSerialDevice implements UsbSerialInterface {
             if (data.length > 0)
                 connection.bulkTransfer(outEndpoint, data, data.length, USB_TIMEOUT);
 
-            /*try {
+            try {
                 Thread.sleep(1);
             } catch (InterruptedException e) {
                 e.printStackTrace();
-            }*/
+            }
         }
 
         public void setUsbEndpoint(UsbEndpoint outEndpoint) {
@@ -395,24 +413,79 @@ public abstract class UsbSerialDevice implements UsbSerialInterface {
      * BufferThread waits for request notifications from  WorkerThread
      */
     protected class BufferThread extends AbstractWorkerThread {
-        private final UsbSerialDevice mUsbSerialDevice;
-        private UsbReadCallback callback;
-        public BufferThread(UsbSerialDevice usbSerialDevice) {
+        private boolean mTestMode;
+        private UsbReadCallback mReadCallback;
+        public BufferThread() {
             super("BufferThread");
-            mUsbSerialDevice = usbSerialDevice;
+            mTestMode = false;
+            mReadCallback = null;
         }
 
         @Override
         public void doRun() {
-            ProtocalCmd result = analyzeBuffer.get();
-            if(result !=null && result.getSessionID() != -1){
-                if(callback != null)
-                    callback.onReceivedData(result);
+            if(started) {
+                if(mTestMode) {
+                    byte[] data;
+                    data = analyzeBuffer.getBuffer();
+                    if (data != null && mReadCallback != null) {
+                        mReadCallback.onReceivedDataForTest(data);
+                    }
+                } else {
+                    ProtocalCmd result = analyzeBuffer.get();
+                    if(result != null && mReadCallback != null){
+                        int cmdValue = result.getCmdValue();
+                        if(!(cmdValue == CmdResultFactory.CMD_KEEP_LIVE_VALUE || cmdValue == CmdResultFactory.CMD_ERR_MESSAGE_VALUE)) {
+                            mReadCallback.onReceivedData(result);
+                        }
+                    }
+                }
+            }
+            try {
+                Thread.sleep(1,0);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
             }
         }
 
-        public void setCallback(UsbReadCallback callback) {
-            this.callback = callback;
+        public int setCallback(UsbReadCallback mCallback) {
+            int ret = 0;
+            mReadCallback = mCallback;
+            return ret;
         }
+
+        public int removeCallback(){
+            int ret = 0;
+            mReadCallback = null;
+            return ret;
+        }
+
+        public boolean setTestMode(boolean test_mode){
+            mTestMode = test_mode;
+            return true;
+        }
+    }
+
+    public int resume(){
+        int ret = -1;
+        if(workerThread != null && bufferThread != null) {
+            workerThread.resumeThread();
+            bufferThread.resumeThread();
+            ret = 0;
+        }
+        return ret;
+    }
+
+    public int pause(){
+        int ret = -1;
+        if(workerThread != null && bufferThread != null) {
+            workerThread.pauseThread();
+            bufferThread.pauseThread();
+            ret = 0;
+        }
+        return ret;
+    }
+
+    public boolean setTestMode(boolean test_mode) {
+        return bufferThread.setTestMode(test_mode);
     }
 }
